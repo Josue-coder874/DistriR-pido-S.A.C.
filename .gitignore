@@ -1,0 +1,44 @@
+# Entornos virtuales
+.venv/
+venv/
+env/
+ENV/
+
+# Dependencias de Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Dependencias de Node
+node_modules/
+.npm/
+.pnpm-store/
+
+# Construcciones y artefactos
+build/
+dist/
+out/
+coverage/
+*.log
+
+# Variables de entorno
+.env
+.env.*
+!.env.example
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Editores y herramientas
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Bases de datos locales
+*.sqlite3

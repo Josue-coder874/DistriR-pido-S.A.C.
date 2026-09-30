@@ -13,7 +13,7 @@ Plataforma web de optimización de rutas de distribución para **DistriRápido S
 | Josue Gonzales Silupu | Líder del proyecto y Scrum Master |
 | Nayely Cuicapuza Remigio | Desarrollo backend |
 | Esau Landeon Arrellano | Desarrollo frontend |
-| Yvonne Ccama Chino | Base de datos y calidad (QA) |
+
 
 ## Tecnologías
 

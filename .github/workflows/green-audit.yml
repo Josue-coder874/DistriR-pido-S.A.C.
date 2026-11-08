@@ -1,0 +1,25 @@
+name: Green IT & Performance Audit
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: src/frontend/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - name: Instalar Lighthouse CLI
+        run: npm install --no-save @lhci/cli@0.15.1
+      - name: Ejecutar Lighthouse CI
+        run: npx lhci autorun --collect.startServerReadyPattern="Local:" --collect.startServerCommand="npm run dev -- --host 127.0.0.1" --collect.url="http://127.0.0.1:5173" --upload.target="temporary-public-storage"

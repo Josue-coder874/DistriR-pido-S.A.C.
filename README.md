@@ -68,6 +68,11 @@ Cada documento incluye un enlace de retorno a este README.
 
 Cada documento incluye un enlace de retorno a este README.
 
+### Informes Green IT
+
+- [Informe de reducción del impacto ambiental](docs/03%20Implementacion/reduccion%20del%20impacto%20ambiental/01%20Informe%20de%20reduccion%20del%20impacto%20ambiental%20V_1_0_0.md)
+- [Estándares de ingeniería de software](docs/03%20Implementacion/reduccion%20del%20impacto%20ambiental/02%20Estandares%20Ingenier%C3%ADa%20de%20software%20V_1_0_0.md)
+
 ## Ejecución local
 
 ```powershell

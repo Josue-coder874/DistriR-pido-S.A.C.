@@ -1,12 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { apiErrorMessage, apiFetch, jsonRequest } from './api';
 import { can, ROLE_LABELS } from './auth';
 import ConfirmDialog from './components/ConfirmDialog';
 import FleetPanel, { FUEL_LABELS } from './components/FleetPanel';
 import UserBar from './components/UserBar';
-import DashboardView from './components/DashboardView';
-import OrdersView from './components/OrdersView';
-import RouteView from './components/RouteView';
+
+const DashboardView = lazy(() => import('./components/DashboardView'));
+const OrdersView = lazy(() => import('./components/OrdersView'));
+const RouteView = lazy(() => import('./components/RouteView'));
 
 const fallbackCustomers = [
   { id: 1, name: 'Cliente A', address: 'Av. Central 100', latitude: -12.0464, longitude: -77.0428, priority: 1 },

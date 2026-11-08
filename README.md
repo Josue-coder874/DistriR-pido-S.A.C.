@@ -1,0 +1,93 @@
+# EcoLogística Lima
+
+Plataforma web de optimización de rutas de distribución para **DistriRápido S.A.C.** que calcula rutas considerando costo, tiempo y emisiones de CO₂, en reemplazo de la planificación manual actual.
+
+**Líder del Proyecto:** Josue Gonzales Silipu  
+**Asignatura:** Taller de Proyectos 2 · Ingeniería de Sistemas e Informática  
+**Estado actual:** Sprint cerrado en Jira · Actividades `LD-9` a `LD-26` en **Listo**, asignadas a Josue Gonzales Silipu, vencimiento 2026-10-09.
+
+## Equipo
+
+| Integrante | Rol |
+|---|---|
+| Josue Gonzales Silipu | Líder del proyecto y Scrum Master |
+| Nayely Cuicapuza Remigio | Desarrollo backend |
+| Esau Landeon Arrellano | Desarrollo frontend |
+
+## Tecnologías
+
+- **Backend:** Python, FastAPI, OR-Tools
+- **Frontend:** React, Vite
+- **Base de datos:** SQLite local para el MVP; persistencia real en el archivo `src/backend/app.db` sin necesidad de servidor externo
+- **Control de versiones:** Git
+
+## Estructura del repositorio
+
+```text
+.
+├── README.md
+├── .gitignore
+├── docs/
+│   ├── 01 Inicio/
+│   ├── 02 Planificacion/
+│   └── 03 Implementacion/
+│       ├── Sprint 1/
+│       └── Sprint 2/
+└── src/
+    ├── backend/
+    └── frontend/
+```
+
+## Documentación
+
+### Inicio y planificación
+
+- [Carpeta 01 Inicio](docs/01%20Inicio/)
+- [Carpeta 02 Planificación](docs/02%20Planificacion/)
+
+### Entregables del Sprint 2
+
+| Documento | Enlace |
+|---|---|
+| 01. Informe de estado del proyecto | [V_1_0_0](docs/03%20Implementacion/Sprint%202/01%20Informe%20de%20estado%20del%20proyecto%20V_1_0_0.md) |
+| 02. Registro de impedimentos | [V_1_0_0](docs/03%20Implementacion/Sprint%202/02%20Registro%20de%20Impedimentos%20V_1_0_0.md) |
+| 03. Revisión del Sprint | [V_1_0_0](docs/03%20Implementacion/Sprint%202/03%20Revisi%C3%B3n%20del%20Sprint%20V_1_0_0.md) |
+| 04. Retrospectiva del Sprint | [V_1_0_0](docs/03%20Implementacion/Sprint%202/04%20Retrospectiva%20del%20Sprint%20V_1_0_0.md) |
+
+Cada documento incluye un enlace de retorno a este README.
+
+## Ejecución local
+
+```powershell
+# Backend
+cd src/backend
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+Copy-Item .env.example .env
+# Configura SECRET_KEY en .env
+python -m scripts.create_user --email admin@distrirapido.pe --name "Administrador" --role ADMINISTRADOR
+python -m uvicorn app.main:app --reload
+
+# Frontend
+cd ../frontend
+npm install
+npm run dev
+```
+
+El archivo `.env` no se sube al repositorio. El backend utiliza SQLite como base de datos definitiva para el alcance del MVP y crea/actualiza el archivo local `src/backend/app.db`. PostgreSQL/PostGIS no forma parte de la implementación acordada para este proyecto.
+
+Toda la API requiere inicio de sesión. Los roles disponibles son `ADMINISTRADOR`, `DESPACHADOR`, `CONDUCTOR` y `AUDITOR`. Sin `SMTP_HOST`, el enlace de recuperación de contraseña se muestra en el log del backend.
+
+Pruebas: `python -m pytest` en `src/backend` y `npm test` en `src/frontend`.
+
+## Control de versiones de la documentación
+
+La documentación sigue [Versionado Semántico](https://semver.org/lang/es/): cada documento incluye su historial de versiones.
+
+| Fecha | Documento | Versión | Cambio |
+| --- | --- | --- | --- |
+| 2026-10-06 | Documentos de Implementación del Sprint 2 (01 a 04) | 1.0.0 | Entregables completos del Sprint 2 con trazabilidad y navegación. |
+| 2026-10-06 | Documentos de Implementación del Sprint 1 (01 a 04) | 1.1.0 | Trazabilidad con el backlog, corrección del estado real y organización por sprint. |
+| 2026-09-29 | Documentos de Implementación (01 a 04) | 1.0.0 | Versión inicial del Sprint 1. |
+| 2026-09-28 | Stack Tecnológico, Modelo C4, Requisitos Funcionales, Registro de Riesgos y Presupuesto | 1.1.0 | Actualización según decisiones del Sprint 1. |

@@ -547,21 +547,80 @@ h2 {
   color: #9fb8c9;
 }
 
-@media (max-width: 820px) {
-  .fleet-grid {
-    grid-template-columns: 1fr;
-  }
+.module-nav {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  margin-bottom: 20px;
+  padding: 4px;
+}
 
-  .content-grid {
-    grid-template-columns: 1fr;
-  }
+.module-nav button {
+  border: 1px solid #295267;
+  background: #102b3b;
+  color: #cfe9f4;
+  border-radius: 999px;
+  padding: 10px 16px;
+  cursor: pointer;
+}
 
-  .topbar {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+.module-nav button.active {
+  background: #2ee6bf;
+  color: #062335;
+  font-weight: 800;
+}
 
-  .two-columns {
-    grid-template-columns: 1fr;
-  }
+.module-page {
+  display: grid;
+  gap: 18px;
+}
+
+.route-controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.route-controls label {
+  display: grid;
+  gap: 6px;
+  flex: 1;
+}
+
+.route-controls select,
+.module-page select {
+  min-height: 42px;
+  border-radius: 8px;
+  border: 1px solid #3b6072;
+  background: #10293a;
+  color: white;
+  padding: 8px 12px;
+}
+
+.route-list {
+  padding-left: 22px;
+}
+
+.accent-0 {
+  --accent: #2ee6bf;
+}
+
+.accent-1 {
+  --accent: #63aee6;
+}
+
+.accent-2 {
+  --accent: #6ee7b7;
+}
+
+.accent-3 {
+  --accent: #f6c453;
+}
+
+.accent-4 {
+  --accent: #c084fc;
+}
+
+.stat-card {
+  border-top: 3px solid var(--accent);
 }

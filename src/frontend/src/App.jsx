@@ -279,9 +279,11 @@ function App({ user, onLogout }) {
           <button className={activeModule === 'routes' ? 'active' : ''} onClick={() => setActiveModule('routes')}>Rutas</button>
           <button className={activeModule === 'fleet' ? 'active' : ''} onClick={() => setActiveModule('fleet')}>Flota</button>
         </nav>
-        {activeModule === 'dashboard' && null}
-        {activeModule === 'orders' && <OrdersView customers={customers} canEdit={canEditCustomers} onAddCustomer={handleSubmitCustomerPayload} submitting={submitting} message={message} />}
-        {activeModule === 'routes' && <RouteView result={result} customers={customers} vehicles={vehicles} selectedVehicleId={selectedVehicleId} onVehicleChange={setSelectedVehicleId} onOptimize={handleOptimize} loading={loading} canOptimize={canOptimize} />}
+        <Suspense fallback={<p className="loading" role="status">Cargando módulo...</p>}>
+          {activeModule === 'orders' && <OrdersView customers={customers} canEdit={canEditCustomers} onAddCustomer={handleSubmitCustomerPayload} submitting={submitting} message={message} />}
+          {activeModule === 'routes' && <RouteView result={result} customers={customers} vehicles={vehicles} selectedVehicleId={selectedVehicleId} onVehicleChange={setSelectedVehicleId} onOptimize={handleOptimize} loading={loading} canOptimize={canOptimize} />}
+        </Suspense>
+
         {activeModule === 'fleet' && <section className="module-page"><p>Gestión de flota disponible en el panel del sistema.</p></section>}
 
         {activeModule === 'dashboard' && <>

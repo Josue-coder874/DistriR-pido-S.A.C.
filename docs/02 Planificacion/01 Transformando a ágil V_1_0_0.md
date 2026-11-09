@@ -5,7 +5,11 @@
 | Campo | Detalle |
 | --- | --- |
 | **Proyecto** | EcoLogística Lima – Optimizador de Rutas Sostenibles |
+<<<<<<< HEAD
 | **Integrantes** | JOSUE GONZALES SILUPU· CUICAPUZA REMIGIO, NAYELY NILDA · LANDEON ARELLANO, ESAU JOSE |
+=======
+| **Integrantes** | Josue [Apellidos] · [Nombre integrante 2] · [Nombre integrante 3] |
+>>>>>>> origin/main
 | **Fecha** | 25 de agosto de 2026 |
 | **Versión** | 1.0.0 |
 

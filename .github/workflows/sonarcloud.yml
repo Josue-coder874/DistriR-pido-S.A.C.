@@ -47,11 +47,11 @@ jobs:
         run: npm run test:coverage
 
       - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@v5
+        uses: SonarSource/sonarqube-scan-action@v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: https://sonarcloud.io
         with:
           args: >-
             -Dsonar.organization=${{ vars.SONAR_ORGANIZATION }}
-            -Dsonar.projectKey=${{ vars.SONAR_PROJECT_KEY || 'Josue-coder874_DistriR-pido-S.A.C' }}
+            -Dsonar.projectKey=${{ vars.SONAR_PROJECT_KEY || 'Josue-coder874_DistriR-pido-S.A.C.' }}

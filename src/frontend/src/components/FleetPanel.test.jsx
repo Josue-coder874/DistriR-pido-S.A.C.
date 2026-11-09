@@ -6,6 +6,10 @@ import { callsTo, mockApi, signIn } from '../test/mockApi';
 const fleetPanel = () => screen.getByRole('heading', { name: 'Flota' }).closest('section');
 
 const vehicleSelect = () => screen.getByRole('combobox', { name: 'Vehículo' });
+const openRoutes = async () => {
+  fireEvent.click(screen.getByRole('button', { name: 'Rutas' }));
+  await screen.findByRole('heading', { name: 'Planificación de rutas' });
+};
 
 const fillVehicleForm = ({ plate, capacity, fuel, factor }) => {
   const panel = within(fleetPanel());
@@ -60,8 +64,9 @@ describe('Gestión de flota', () => {
       emission_factor_co2: 0.21,
     });
     expect(within(fleetPanel()).getByText('XYZ-789')).toBeTruthy();
-    expect(within(vehicleSelect()).getByRole('option', { name: 'XYZ-789 · GLP' })).toBeTruthy();
     expect(within(fleetPanel()).getByLabelText('Placa').value).toBe('');
+    await openRoutes();
+    expect(within(vehicleSelect()).getByRole('option', { name: 'XYZ-789 · GLP' })).toBeTruthy();
   });
 
   it('sin factor de emisión envía null para usar el de referencia', async () => {
@@ -118,14 +123,17 @@ describe('Gestión de flota', () => {
   it('pasar un vehículo a mantenimiento lo quita del selector de optimización', async () => {
     await renderApp();
     await within(fleetPanel()).findByText('ABC-123');
+    await openRoutes();
     fireEvent.change(vehicleSelect(), { target: { value: '1' } });
     expect(vehicleSelect().value).toBe('1');
 
+    fireEvent.click(screen.getByRole('button', { name: 'Dashboard' }));
     fireEvent.change(screen.getByRole('combobox', { name: 'Estado de ABC-123' }), {
       target: { value: 'EN_MANTENIMIENTO' },
     });
 
     expect(await screen.findByText('Vehículo ABC-123 ahora está en mantenimiento.')).toBeTruthy();
+    await openRoutes();
     expect(within(vehicleSelect()).queryByRole('option', { name: 'ABC-123 · Diésel' })).toBeNull();
     expect(vehicleSelect().value).toBe('');
   });
@@ -134,6 +142,7 @@ describe('Gestión de flota', () => {
     await renderApp();
     await within(fleetPanel()).findByText('ABC-123');
 
+    await openRoutes();
     const options = within(vehicleSelect()).getAllByRole('option').map((option) => option.textContent);
     expect(options).toEqual(['Sin asignar (referencia diésel)', 'ABC-123 · Diésel']);
   });
@@ -166,6 +175,7 @@ describe('Gestión de flota', () => {
     const fetchMock = await renderApp();
     await within(fleetPanel()).findByText('ABC-123');
 
+    await openRoutes();
     fireEvent.change(vehicleSelect(), { target: { value: '1' } });
     fireEvent.click(screen.getByRole('button', { name: 'Optimizar ruta' }));
 
@@ -178,6 +188,7 @@ describe('Gestión de flota', () => {
   it('sin vehículo seleccionado no envía vehicle_id', async () => {
     const fetchMock = await renderApp();
 
+    await openRoutes();
     fireEvent.click(screen.getByRole('button', { name: 'Optimizar ruta' }));
 
     await screen.findByText('Ruta optimizada con éxito.');
@@ -190,6 +201,7 @@ describe('Gestión de flota', () => {
     // Vehículo que pasó a mantenimiento desde otra sesión: la lista local aún lo muestra activo.
     const fetchMock = await renderApp();
     await within(fleetPanel()).findByText('ABC-123');
+    await openRoutes();
     fireEvent.change(vehicleSelect(), { target: { value: '1' } });
     fetchMock.mockImplementationOnce(() =>
       Promise.resolve({
@@ -212,6 +224,69 @@ describe('Gestión de flota', () => {
     render(<App user={signIn()} onLogout={vi.fn()} />);
 
     expect(await screen.findByText('No se pudo cargar la flota: la API no está disponible.')).toBeTruthy();
+  });
+
+  it('muestra el error de conexión al fallar el registro de un vehículo', async () => {
+    const fetchMock = await renderApp();
+    fillVehicleForm({ plate: 'XYZ-789', capacity: '900' });
+    fetchMock.mockImplementationOnce(() => Promise.reject(new Error('API caída')));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Registrar vehículo' }));
+
+    expect(await screen.findByText('No se pudo conectar con la API.')).toBeTruthy();
+  });
+
+  it('usa el mensaje alternativo si la respuesta de error no contiene JSON', async () => {
+    const fetchMock = await renderApp();
+    fillVehicleForm({ plate: 'XYZ-789', capacity: '900' });
+    fetchMock.mockImplementationOnce(() =>
+      Promise.resolve({ ok: false, json: () => Promise.reject(new Error('JSON inválido')) }),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Registrar vehículo' }));
+
+    expect(await screen.findByText('No se pudo registrar el vehículo.')).toBeTruthy();
+  });
+
+  it('informa el error de API cuando falla el cambio de estado', async () => {
+    const fetchMock = await renderApp();
+    await within(fleetPanel()).findByText('ABC-123');
+    fetchMock.mockImplementationOnce(() =>
+      Promise.resolve({ ok: false, json: () => Promise.resolve({ detail: 'Cambio rechazado.' }) }),
+    );
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Estado de ABC-123' }), {
+      target: { value: 'EN_MANTENIMIENTO' },
+    });
+
+    expect(await screen.findByText('Cambio rechazado.')).toBeTruthy();
+  });
+
+  it('al dar de baja el vehículo editado limpia el formulario de edición', async () => {
+    const fetchMock = await renderApp();
+    fireEvent.click(await screen.findByRole('button', { name: 'Editar ABC-123' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Dar de baja ABC-123' }));
+    const dialog = screen.getByRole('alertdialog');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Dar de baja' }));
+
+    expect(await screen.findByText('Vehículo ABC-123 dado de baja.')).toBeTruthy();
+    expect(callsTo(fetchMock, 'DELETE', /\/vehicles\/1$/)).toHaveLength(1);
+    expect(within(fleetPanel()).getByRole('button', { name: 'Registrar vehículo' })).toBeTruthy();
+    expect(within(fleetPanel()).getByLabelText('Placa').value).toBe('');
+  });
+
+  it('informa el error de API al fallar la baja y mantiene el vehículo', async () => {
+    const fetchMock = await renderApp();
+    await within(fleetPanel()).findByText('ABC-123');
+    fetchMock.mockImplementationOnce(() =>
+      Promise.resolve({ ok: false, json: () => Promise.resolve({ detail: 'No se pudo dar de baja.' }) }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Dar de baja ABC-123' }));
+    fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Dar de baja' }));
+
+    expect(await screen.findByText('No se pudo dar de baja.')).toBeTruthy();
+    expect(within(fleetPanel()).getByText('ABC-123')).toBeTruthy();
+    expect(screen.queryByRole('alertdialog')).toBeNull();
   });
 
   it('con la flota vacía muestra el estado vacío', async () => {

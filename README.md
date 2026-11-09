@@ -96,7 +96,9 @@ El archivo `.env` no se sube al repositorio. El backend utiliza SQLite como base
 
 Toda la API requiere inicio de sesión. Los roles disponibles son `ADMINISTRADOR`, `DESPACHADOR`, `CONDUCTOR` y `AUDITOR`. Sin `SMTP_HOST`, el enlace de recuperación de contraseña se muestra en el log del backend.
 
-Pruebas: `python -m pytest` en `src/backend` y `npm test` en `src/frontend`.
+Pruebas con cobertura mínima de líneas del 80%: instala primero `src/backend/requirements-dev.txt` y, desde `src/backend`, ejecuta `python -m pytest --cov=app --cov-report=xml:coverage.xml --cov-report=term-missing` seguido de `python -m scripts.check_line_coverage --threshold 80`. En `src/frontend`, ejecuta `npm run test:coverage`. El workflow de CI y el análisis de SonarCloud aplican el mismo umbral de líneas al backend.
+
+El workflow de SonarCloud comprueba que existan los reportes `src/backend/coverage.xml` y `src/frontend/coverage/lcov.info` antes del análisis y espera el resultado del Quality Gate. Para usar este análisis de CI, desactiva **Automatic Analysis** en la configuración del proyecto de SonarCloud; SonarCloud no permite combinar ambos modos. Configura `SONAR_TOKEN` como secreto y `SONAR_ORGANIZATION` como variable de Actions; `SONAR_PROJECT_KEY` es opcional si se usa la clave predeterminada del archivo de propiedades. Para bloquear el merge, configura el check `SonarCloud / sonarcloud` como obligatorio en las reglas de protección de la rama destino.
 
 ## Control de versiones de la documentación
 

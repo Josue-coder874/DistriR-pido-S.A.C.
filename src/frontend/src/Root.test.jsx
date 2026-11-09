@@ -13,10 +13,16 @@ const fillLogin = (email, password = TEST_PASSWORD) => {
 async function loginAs(role) {
   render(<Root />);
   fillLogin(apiUsers[role].email);
-  await screen.findByText(apiUsers[role].name);
+  await screen.findByRole('button', { name: `Opciones de usuario: ${apiUsers[role].name}` });
 }
 
 const fleetPanel = () => screen.getByRole('heading', { name: 'Flota' }).closest('section');
+const openRoutes = async () => {
+  fireEvent.click(screen.getByRole('button', { name: 'Rutas' }));
+  await screen.findByRole('heading', { name: 'Planificación de rutas' });
+};
+const openUserMenu = (name = apiUsers.ADMINISTRADOR.name) =>
+  fireEvent.click(screen.getByRole('button', { name: `Opciones de usuario: ${name}` }));
 
 afterEach(() => {
   cleanup();
@@ -83,6 +89,7 @@ describe('Inicio de sesión (RF-001)', () => {
     mockApi();
     await loginAs('ADMINISTRADOR');
 
+    openUserMenu();
     fireEvent.click(screen.getByRole('button', { name: 'Cerrar sesión' }));
 
     expect(screen.getByRole('heading', { name: 'Iniciar sesión' })).toBeTruthy();
@@ -99,6 +106,8 @@ describe('Sesión guardada', () => {
 
     render(<Root />);
 
+    await screen.findByText('Planificador de rutas');
+    await openRoutes();
     expect(await screen.findByRole('button', { name: 'Optimizar ruta' })).toBeTruthy();
     expect(callsTo(fetchMock, 'GET', /\/auth\/me$/).length).toBeGreaterThan(0);
     expect(loadSession().user.role).toBe('ADMINISTRADOR');
@@ -115,11 +124,22 @@ describe('Sesión guardada', () => {
     expect(loadSession()).toBeNull();
   });
 
+  it('mantiene la sesión guardada si la validación falla por desconexión', async () => {
+    mockApi({ offline: true });
+    signIn('ADMINISTRADOR');
+
+    render(<Root />);
+
+    expect(await screen.findByText('Modo demo')).toBeTruthy();
+    expect(loadSession().user.role).toBe('ADMINISTRADOR');
+  });
+
   it('si la sesión expira durante el uso vuelve al inicio de sesión', async () => {
     const fetchMock = mockApi();
     await loginAs('ADMINISTRADOR');
 
     fetchMock.revokeSession();
+    await openRoutes();
     fireEvent.click(screen.getByRole('button', { name: 'Optimizar ruta' }));
 
     expect(await screen.findByText('Tu sesión expiró. Inicia sesión nuevamente.')).toBeTruthy();
@@ -132,18 +152,20 @@ describe('Panel según el rol (RF-010)', () => {
     mockApi();
     await loginAs('ADMINISTRADOR');
 
-    expect(screen.getByRole('button', { name: 'Optimizar ruta' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Optimizar ruta' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Agregar cliente' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Limpiar clientes' })).toBeTruthy();
     expect(within(fleetPanel()).getByRole('button', { name: 'Registrar vehículo' })).toBeTruthy();
     expect(await within(fleetPanel()).findByRole('button', { name: 'Editar ABC-123' })).toBeTruthy();
+    await openRoutes();
+    expect(screen.getByRole('button', { name: 'Optimizar ruta' })).toBeTruthy();
   });
 
   it('Despachador: optimiza y registra clientes, pero la flota es de solo lectura', async () => {
     mockApi();
     await loginAs('DESPACHADOR');
 
-    expect(screen.getByRole('button', { name: 'Optimizar ruta' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Optimizar ruta' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Agregar cliente' })).toBeTruthy();
     // La eliminación física de registros es exclusiva del Administrador.
     expect(screen.queryByRole('button', { name: 'Limpiar clientes' })).toBeNull();
@@ -153,14 +175,19 @@ describe('Panel según el rol (RF-010)', () => {
     expect(panel.queryByRole('button', { name: 'Editar ABC-123' })).toBeNull();
     expect(panel.queryByRole('button', { name: 'Dar de baja ABC-123' })).toBeNull();
     expect(panel.getByText('En mantenimiento')).toBeTruthy();
+    await openRoutes();
+    expect(screen.getByRole('button', { name: 'Optimizar ruta' })).toBeTruthy();
   });
 
   it('Auditor: solo lectura, sin opciones de crear, modificar ni eliminar (RN-010)', async () => {
     mockApi();
     await loginAs('AUDITOR');
 
-    expect(screen.getByText('Solo lectura · Auditor externo')).toBeTruthy();
+    openUserMenu(apiUsers.AUDITOR.name);
+    expect(screen.getByText('Auditor externo')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Rutas' }));
     expect(screen.queryByRole('button', { name: 'Optimizar ruta' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Dashboard' }));
     expect(screen.queryByRole('button', { name: 'Agregar cliente' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Limpiar clientes' })).toBeNull();
     expect(await screen.findByText('Av. Central 100')).toBeTruthy();
@@ -198,6 +225,30 @@ describe('Recuperación de contraseña (RF-001)', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Volver a iniciar sesión' }));
     expect(screen.getByRole('heading', { name: 'Iniciar sesión' })).toBeTruthy();
+  });
+
+  it('muestra errores de la API al solicitar un enlace de recuperación', async () => {
+    const fetchMock = mockApi();
+    render(<Root />);
+    fireEvent.click(screen.getByRole('button', { name: '¿Olvidaste tu contraseña?' }));
+    fireEvent.change(screen.getByLabelText('Correo electrónico'), { target: { value: 'admin@distrirapido.pe' } });
+    fetchMock.mockImplementationOnce(() =>
+      Promise.resolve({ ok: false, json: () => Promise.resolve({ detail: 'Solicitud rechazada.' }) }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar enlace' }));
+
+    expect((await screen.findByRole('alert')).textContent).toBe('Solicitud rechazada.');
+  });
+
+  it('informa la desconexión al solicitar el enlace de recuperación', async () => {
+    const fetchMock = mockApi();
+    render(<Root />);
+    fireEvent.click(screen.getByRole('button', { name: '¿Olvidaste tu contraseña?' }));
+    fireEvent.change(screen.getByLabelText('Correo electrónico'), { target: { value: 'admin@distrirapido.pe' } });
+    fetchMock.mockImplementationOnce(() => Promise.reject(new Error('API caída')));
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar enlace' }));
+
+    expect((await screen.findByRole('alert')).textContent).toMatch(/No se pudo conectar con la API/);
   });
 
   describe('desde el enlace del correo', () => {
@@ -264,6 +315,30 @@ describe('Recuperación de contraseña (RF-001)', () => {
       expect(loadSession()).toBeNull();
       const [[, options]] = callsTo(fetchMock, 'POST', /\/password-reset\/confirm$/);
       expect(JSON.parse(options.body)).toEqual({ token: 'token-de-recuperacion', new_password: 'NuevaClave2026' });
+    });
+
+    it('mantiene la sesión previa si falla la petición de cambio de contraseña', async () => {
+      const fetchMock = mockApi();
+      const session = signIn('ADMINISTRADOR');
+      openResetLink();
+      fetchMock.mockImplementationOnce(() => Promise.reject(new Error('API caída')));
+
+      submitNewPassword('NuevaClave2026');
+
+      expect((await screen.findByRole('alert')).textContent).toMatch(/No se pudo conectar con la API/);
+      expect(loadSession().user).toEqual(session);
+    });
+
+    it('volver al inicio sin guardar no invalida una sesión existente', async () => {
+      mockApi();
+      const session = signIn('ADMINISTRADOR');
+      openResetLink();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Volver a iniciar sesión' }));
+
+      expect(await screen.findByRole('heading', { name: 'Planificador de rutas' })).toBeTruthy();
+      expect(loadSession().user).toEqual(session);
+      expect(window.location.search).toBe('');
     });
   });
 });

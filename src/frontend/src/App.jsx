@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { apiErrorMessage, apiFetch, jsonRequest } from './api';
-import { can, ROLE_LABELS } from './auth';
+import { can } from './auth';
 import ConfirmDialog from './components/ConfirmDialog';
 import FleetPanel, { FUEL_LABELS } from './components/FleetPanel';
 import UserBar from './components/UserBar';
@@ -236,6 +236,11 @@ function App({ user, onLogout }) {
     }
   };
 
+  const navigateTo = (module) => {
+    setMessage('');
+    setActiveModule(module);
+  };
+
   return (
     <div className="app-shell">
       <header className="topbar">
@@ -248,40 +253,20 @@ function App({ user, onLogout }) {
         </div>
 
         <div className="topbar-actions">
-          {canOptimize ? (
-            <>
-              <label className="vehicle-select">
-                Vehículo
-                <select value={selectedVehicleId} onChange={(event) => setSelectedVehicleId(event.target.value)}>
-                  <option value="">Sin asignar (referencia diésel)</option>
-                  {activeVehicles.map((vehicle) => (
-                    <option key={vehicle.id} value={String(vehicle.id)}>
-                      {vehicle.plate} · {FUEL_LABELS[vehicle.fuel_type]}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <button className="primary-btn" onClick={handleOptimize} disabled={loading}>
-                {loading ? 'Optimizando...' : 'Optimizar ruta'}
-              </button>
-            </>
-          ) : (
-            <span className="badge">Solo lectura · {ROLE_LABELS[user.role]}</span>
-          )}
           <UserBar user={user} onLogout={onLogout} />
         </div>
       </header>
 
       <main className="dashboard">
         <nav className="module-nav" aria-label="Módulos del sistema">
-          <button className={activeModule === 'dashboard' ? 'active' : ''} onClick={() => setActiveModule('dashboard')}>Dashboard</button>
-          <button className={activeModule === 'orders' ? 'active' : ''} onClick={() => setActiveModule('orders')}>Pedidos</button>
-          <button className={activeModule === 'routes' ? 'active' : ''} onClick={() => setActiveModule('routes')}>Rutas</button>
-          <button className={activeModule === 'fleet' ? 'active' : ''} onClick={() => setActiveModule('fleet')}>Flota</button>
+          <button className={activeModule === 'dashboard' ? 'active' : ''} onClick={() => navigateTo('dashboard')}>Dashboard</button>
+          <button className={activeModule === 'orders' ? 'active' : ''} onClick={() => navigateTo('orders')}>Pedidos</button>
+          <button className={activeModule === 'routes' ? 'active' : ''} onClick={() => navigateTo('routes')}>Rutas</button>
+          <button className={activeModule === 'fleet' ? 'active' : ''} onClick={() => navigateTo('fleet')}>Flota</button>
         </nav>
         <Suspense fallback={<p className="loading" role="status">Cargando módulo...</p>}>
           {activeModule === 'orders' && <OrdersView customers={customers} canEdit={canEditCustomers} onAddCustomer={handleSubmitCustomerPayload} submitting={submitting} message={message} />}
-          {activeModule === 'routes' && <RouteView result={result} customers={customers} vehicles={vehicles} selectedVehicleId={selectedVehicleId} onVehicleChange={setSelectedVehicleId} onOptimize={handleOptimize} loading={loading} canOptimize={canOptimize} />}
+          {activeModule === 'routes' && <RouteView result={result} customers={customers} vehicles={vehicles} selectedVehicleId={selectedVehicleId} onVehicleChange={setSelectedVehicleId} onOptimize={handleOptimize} loading={loading} canOptimize={canOptimize} message={message} />}
         </Suspense>
 
         {activeModule === 'fleet' && <section className="module-page"><p>Gestión de flota disponible en el panel del sistema.</p></section>}

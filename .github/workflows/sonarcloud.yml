@@ -1,0 +1,57 @@
+name: SonarCloud
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  sonarcloud:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: src/backend/requirements-dev.txt
+
+      - name: Instalar dependencias backend
+        working-directory: src/backend
+        run: python -m pip install -r requirements-dev.txt
+
+      - name: Ejecutar pruebas backend con cobertura
+        working-directory: src/backend
+        run: pytest --cov=app --cov-report=xml:coverage.xml --cov-report=term-missing
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: src/frontend/package-lock.json
+
+      - name: Instalar dependencias frontend
+        working-directory: src/frontend
+        run: npm ci
+
+      - name: Ejecutar pruebas frontend con cobertura
+        working-directory: src/frontend
+        run: npm run test:coverage
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarqube-scan-action@v5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: https://sonarcloud.io
+        with:
+          args: >-
+            -Dsonar.organization=${{ vars.SONAR_ORGANIZATION }}
+            -Dsonar.projectKey=${{ vars.SONAR_PROJECT_KEY || 'Josue-coder874_DistriR-pido-S.A.C' }}

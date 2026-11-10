@@ -8,7 +8,7 @@
 
 ## 1. Alcance y trazabilidad
 
-Este informe adapta las recomendaciones Green IT al proyecto real Python/FastAPI, React/Vite y SQLite. Las métricas MERN, Express, MongoDB, CO₂ y Lighthouse incluidas en la rúbrica se usan como referencia metodológica, pero no representan mediciones reales de este repositorio. Los resultados Lighthouse registrados abajo son mediciones locales del build de producción y no equivalen a una ejecución en infraestructura de producción.
+Este informe adapta las recomendaciones Green IT al proyecto real Python/FastAPI, React/Vite y SQLite. Las métricas MERN, Express, MongoDB, CO₂ y Lighthouse incluidas en la rúbrica se usan como referencia metodológica. Los resultados Lighthouse registrados abajo son mediciones locales del build de producción y no equivalen a una ejecución en infraestructura de producción.
 
 ## 2. Optimización aplicada
 

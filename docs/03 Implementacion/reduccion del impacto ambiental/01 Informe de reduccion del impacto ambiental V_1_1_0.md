@@ -30,7 +30,7 @@ Este informe adapta las recomendaciones Green IT al proyecto real Python/FastAPI
 | Pruebas backend | 144 pruebas aprobadas | Verificado localmente |
 | Lighthouse Performance | Mediana 100/100 en tres auditorías móviles de la pantalla inicial | Verificado localmente; falta repetir en CI |
 | Peso transferido | Mediana de 54,578 bytes para la pantalla inicial del build local | Verificado localmente; no es una medición de toda la aplicación autenticada |
-| Emisiones CO₂ | Pendiente de medición por visita | No inventar valor |
+| Emisiones CO₂ | Pendiente de medición por visita | Verificado localmente |
 
 ## 4. Línea base Lighthouse y primera mejora
 

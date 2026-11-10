@@ -43,6 +43,7 @@ Plataforma web de optimización de rutas de distribución para **DistriRápido S
 ### Inicio y planificación
 
 - [Carpeta 01 Inicio](docs/01%20Inicio/)
+- [Diseño e Ingeniería de Base de Datos](docs/01%20Inicio/11.%20Base%20de%20datos%20V_1_2_0.md)
 - [Carpeta 02 Planificación](docs/02%20Planificacion/)
 
 ### Entregables del Sprint 2
@@ -60,17 +61,19 @@ Cada documento incluye un enlace de retorno a este README.
 
 | Documento | Enlace |
 |---|---|
-| 01. Revisión del Sprint | [V_1_0_0](docs/03%20Implementacion/Sprint%2003/01%20Revisi%C3%B3n%20del%20Sprint%20V_1_0_0.md) |
+| 01. Revisión del Sprint | [V_1_1_0](docs/03%20Implementacion/Sprint%2003/01%20Revisi%C3%B3n%20del%20Sprint%20V_1_1_0.md) |
 | 02. Retrospectiva del Sprint | [V_1_0_0](docs/03%20Implementacion/Sprint%2003/02%20Retrospectiva%20del%20Sprint%20V_1_0_0.md) |
 | 03. Calidad de código | [V_1_0_0](docs/03%20Implementacion/Sprint%2003/03%20Calidad%20de%20c%C3%B3digo%20V_1_0_0.md) |
-| 04. OWASP Top 10 2025 | [V_1_0_0](docs/03%20Implementacion/Sprint%2003/04%20OWASP%20V_1_0_0.md) |
+| 04. OWASP Top 10 2025 | [V_1_1_0](docs/03%20Implementacion/Sprint%2003/04%20OWASP%20V_1_1_0.md) |
 | 05. Accesibilidad WCAG | [V_1_0_0](docs/03%20Implementacion/Sprint%2003/05%20WCAG%20V_1_0_0.md) |
+| 06. Avance de ventanas de entrega y mapa | [V_1_0_0](docs/03%20Implementacion/Sprint%2003/06%20Avance%20ventanas%20de%20entrega%20y%20mapa%20V_1_0_0.md) |
+| 07. Asignación multi-vehículo y capacidad | [V_1_0_0](docs/03%20Implementacion/Sprint%2003/07%20Asignaci%C3%B3n%20multi-veh%C3%ADculo%20V_1_0_0.md) |
 
 Cada documento incluye un enlace de retorno a este README.
 
 ### Informes Green IT
 
-- [Informe de reducción del impacto ambiental](docs/03%20Implementacion/reduccion%20del%20impacto%20ambiental/01%20Informe%20de%20reduccion%20del%20impacto%20ambiental%20V_1_0_0.md)
+- [Informe de reducción del impacto ambiental](docs/03%20Implementacion/reduccion%20del%20impacto%20ambiental/01%20Informe%20de%20reduccion%20del%20impacto%20ambiental%20V_1_1_0.md)
 - [Estándares de ingeniería de software](docs/03%20Implementacion/reduccion%20del%20impacto%20ambiental/02%20Estandares%20Ingenier%C3%ADa%20de%20software%20V_1_0_0.md)
 
 ## Ejecución local
@@ -96,7 +99,11 @@ El archivo `.env` no se sube al repositorio. El backend utiliza SQLite como base
 
 Toda la API requiere inicio de sesión. Los roles disponibles son `ADMINISTRADOR`, `DESPACHADOR`, `CONDUCTOR` y `AUDITOR`. Sin `SMTP_HOST`, el enlace de recuperación de contraseña se muestra en el log del backend.
 
-Pruebas: `python -m pytest` en `src/backend` y `npm test` en `src/frontend`.
+Los pedidos aceptan una ventana de entrega opcional (`window_start` y `window_end`, formato `HH:MM`). Si se indica una hora, ambas son obligatorias y la hora final debe ser posterior a la inicial. El optimizador considera esas ventanas junto con el tiempo estimado de viaje y 10 minutos de atención por parada; si no encuentra una ruta factible dentro del tiempo de optimización, la API responde con `422` en vez de devolver un orden que incumpla los horarios. Al iniciar, el backend agrega automáticamente las columnas de horario que falten en una base SQLite existente. La ruta optimizada incluye coordenadas ordenadas y se visualiza sobre un mapa de OpenStreetMap; la línea entre paradas es esquemática, no sigue calles ni refleja tráfico. El mapa necesita conexión a internet para descargar sus mosaicos.
+
+Pruebas con cobertura mínima de líneas del 80%: instala primero `src/backend/requirements-dev.txt` y, desde `src/backend`, ejecuta `python -m pytest --cov=app --cov-report=xml:coverage.xml --cov-report=term-missing` seguido de `python -m scripts.check_line_coverage --threshold 80`. En `src/frontend`, ejecuta `npm run test:coverage`. El workflow de CI y el análisis de SonarCloud aplican el mismo umbral de líneas al backend.
+
+El workflow de SonarCloud comprueba que existan los reportes `src/backend/coverage.xml` y `src/frontend/coverage/lcov.info` antes del análisis y espera el resultado del Quality Gate. Para usar este análisis de CI, desactiva **Automatic Analysis** en la configuración del proyecto de SonarCloud; SonarCloud no permite combinar ambos modos. Configura `SONAR_TOKEN` como secreto y `SONAR_ORGANIZATION` como variable de Actions; `SONAR_PROJECT_KEY` es opcional si se usa la clave predeterminada del archivo de propiedades. Para bloquear el merge, configura el check `SonarCloud / sonarcloud` como obligatorio en las reglas de protección de la rama destino.
 
 ## Control de versiones de la documentación
 
@@ -104,6 +111,11 @@ La documentación sigue [Versionado Semántico](https://semver.org/lang/es/): ca
 
 | Fecha | Documento | Versión | Cambio |
 | --- | --- | --- | --- |
+| 2026-11-10 | Diseño e Ingeniería de Base de Datos | 1.2.0 | Se documenta demanda por pedido y salida de rutas con asignación por capacidad. |
+| 2026-11-10 | Asignación multi-vehículo y capacidad | 1.0.0 | Se documenta asignación por capacidad, pedidos no asignados y medición sintética para 150 pedidos/15 vehículos; pico y placa queda explícitamente pendiente. |
+| 2026-11-10 | Informe de reducción del impacto ambiental | 1.1.0 | Se agrega línea base móvil Lighthouse, aserciones de rúbrica, artefactos de CI y resultado de la carga diferida inicial. |
+| 2026-11-10 | Revisión del Sprint 3 y avance de ventanas de entrega y mapa | 1.1.0 | Se registra la evidencia local de ventanas horarias y mapa OpenStreetMap, con validaciones ejecutadas y pendientes sin afirmar el cierre de RF-005/RF-006. |
+| 2026-11-10 | Diseño e Ingeniería de Base de Datos | 1.1.0 | Se documentan las columnas SQLite de ventanas de entrega, la migración existente y los datos de coordenadas devueltos para el mapa. |
 | 2026-10-06 | Documentos de Implementación del Sprint 2 (01 a 04) | 1.0.0 | Entregables completos del Sprint 2 con trazabilidad y navegación. |
 | 2026-10-06 | Documentos de Implementación del Sprint 1 (01 a 04) | 1.1.0 | Trazabilidad con el backlog, corrección del estado real y organización por sprint. |
 | 2026-09-29 | Documentos de Implementación (01 a 04) | 1.0.0 | Versión inicial del Sprint 1. |

@@ -30,11 +30,13 @@ jobs:
 
       - name: Ejecutar pruebas backend con cobertura
         working-directory: src/backend
-        run: pytest --cov=app --cov-report=xml:coverage.xml --cov-report=term-missing
+        run: |
+          pytest --cov=app --cov-report=xml:coverage.xml --cov-report=term-missing
+          python -m scripts.check_line_coverage --threshold 80
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: npm
           cache-dependency-path: src/frontend/package-lock.json
 
@@ -46,6 +48,11 @@ jobs:
         working-directory: src/frontend
         run: npm run test:coverage
 
+      - name: Verificar reportes de cobertura
+        run: |
+          test -s src/backend/coverage.xml
+          test -s src/frontend/coverage/lcov.info
+
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@v6
         env:
@@ -55,3 +62,5 @@ jobs:
           args: >-
             -Dsonar.organization=${{ vars.SONAR_ORGANIZATION }}
             -Dsonar.projectKey=${{ vars.SONAR_PROJECT_KEY || 'Josue-coder874_DistriR-pido-S.A.C.' }}
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.qualitygate.timeout=300

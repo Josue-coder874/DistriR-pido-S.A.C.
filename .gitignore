@@ -25,6 +25,8 @@ dist/
 out/
 coverage/
 *.log
+.lighthouseci/
+lhci-reports/
 
 # Variables de entorno
 .env

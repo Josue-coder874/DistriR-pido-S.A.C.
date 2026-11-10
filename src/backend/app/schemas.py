@@ -1,7 +1,8 @@
 import re
-from typing import Literal
+from datetime import time
+from typing import Generic, Literal, TypeVar
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
 
 FuelType = Literal["diesel", "gasolina", "glp", "gnv"]
 VehicleStatus = Literal["ACTIVO", "EN_MANTENIMIENTO", "DE_BAJA"]
@@ -31,6 +32,14 @@ class CustomerCreate(BaseModel):
     latitude: float = 0.0
     longitude: float = 0.0
     priority: int = 1
+    demand_kg: float = Field(..., gt=0, le=999999.99)
+    window_start: time | None = None
+    window_end: time | None = None
+
+    @model_validator(mode="after")
+    def check_delivery_window(self):
+        validate_delivery_window(self.window_start, self.window_end)
+        return self
 
 
 class CustomerRead(BaseModel):
@@ -42,6 +51,30 @@ class CustomerRead(BaseModel):
     latitude: float
     longitude: float
     priority: int
+    demand_kg: float | None
+    window_start: time | None
+    window_end: time | None
+
+
+PageItem = TypeVar("PageItem")
+
+
+class PaginatedResponse(BaseModel, Generic[PageItem]):
+    items: list[PageItem]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
+
+
+CustomerPage = PaginatedResponse[CustomerRead]
+
+
+def validate_delivery_window(window_start: time | None, window_end: time | None) -> None:
+    if (window_start is None) != (window_end is None):
+        raise ValueError("Debe indicar tanto la hora de inicio como la hora de fin de entrega.")
+    if window_start is not None and window_end is not None and window_start >= window_end:
+        raise ValueError("La hora de fin de entrega debe ser posterior a la hora de inicio.")
 
 
 class VehicleCreate(BaseModel):
@@ -82,21 +115,36 @@ class VehicleRead(BaseModel):
     status: VehicleStatus
 
 
+VehiclePage = PaginatedResponse[VehicleRead]
+
+
 class RouteStop(BaseModel):
     id: int
     name: str
     lat: float = 0.0
     lng: float = 0.0
     priority: int = 1
+    demand_kg: float | None = Field(None, gt=0)
+    window_start: time | None = None
+    window_end: time | None = None
+
+    @model_validator(mode="after")
+    def check_delivery_window(self):
+        validate_delivery_window(self.window_start, self.window_end)
+        return self
 
 
 class RouteRequest(BaseModel):
-    stops: list[RouteStop]
+    stops: list[RouteStop] | None = None
     # Vehículo de la flota; si se envía, sus datos reemplazan fuel_type y emission_factor_kg_km.
     vehicle_id: int | None = None
     fuel_type: FuelType = "diesel"
     # Si se envía, reemplaza el factor por defecto del tipo de combustible (kg CO₂/km).
     emission_factor_kg_km: float | None = Field(None, gt=0)
+
+
+class CustomerDemandUpdate(BaseModel):
+    demand_kg: float = Field(..., gt=0, le=999999.99)
 
 
 class LoginRequest(BaseModel):

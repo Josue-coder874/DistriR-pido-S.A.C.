@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { apiErrorMessage, apiFetch, jsonRequest } from '../api';
 import ConfirmDialog from './ConfirmDialog';
+import PaginationControls from './PaginationControls';
 
 export const FUEL_LABELS = {
   diesel: 'Diésel',
@@ -47,6 +48,36 @@ function FleetPanel({ vehicles, available, canManage, onChanged }) {
   const [notice, setNotice] = useState(null);
   const [retireTarget, setRetireTarget] = useState(null);
   const [retiring, setRetiring] = useState(false);
+  const [pageData, setPageData] = useState(null);
+  const [page, setPage] = useState(1);
+
+  const loadPage = async (requestedPage) => {
+    const data = await request(`/vehicles?page=${requestedPage}&page_size=12`, undefined, 'No se pudo cargar la flota.');
+    if (data.items.length === 0 && requestedPage > 1) {
+      return loadPage(requestedPage - 1);
+    }
+    setPageData(data);
+    setPage(data.page);
+  };
+
+  const handlePageChange = async (requestedPage) => {
+    try {
+      await loadPage(requestedPage);
+    } catch (error) {
+      setNotice({ type: 'error', text: error.message });
+    }
+  };
+
+  useEffect(() => {
+    if (!available) {
+      return;
+    }
+    loadPage(1).catch((error) => setNotice({ type: 'error', text: error.message }));
+  }, [available]);
+
+  const listedVehicles = pageData?.items ?? vehicles.slice(0, 12);
+  const listedTotal = pageData?.total ?? vehicles.length;
+  const listedTotalPages = pageData?.total_pages ?? Math.max(1, Math.ceil(vehicles.length / 12));
 
   const resetForm = () => {
     setForm(emptyForm);
@@ -83,6 +114,7 @@ function FleetPanel({ vehicles, available, canManage, onChanged }) {
       });
       resetForm();
       await onChanged();
+      await loadPage(page);
     } catch (error) {
       setNotice({ type: 'error', text: error.message });
     } finally {
@@ -111,6 +143,7 @@ function FleetPanel({ vehicles, available, canManage, onChanged }) {
       );
       setNotice({ type: 'success', text: `Vehículo ${saved.plate} ahora está ${STATUS_LABELS[saved.status]}.` });
       await onChanged();
+      await loadPage(page);
     } catch (error) {
       setNotice({ type: 'error', text: error.message });
     }
@@ -130,6 +163,7 @@ function FleetPanel({ vehicles, available, canManage, onChanged }) {
       }
       setNotice({ type: 'success', text: `Vehículo ${saved.plate} dado de baja.` });
       await onChanged();
+      await loadPage(page);
     } catch (error) {
       setNotice({ type: 'error', text: error.message });
     } finally {
@@ -208,10 +242,10 @@ function FleetPanel({ vehicles, available, canManage, onChanged }) {
 
         <div>
           {!available && <p className="empty-state">No se pudo cargar la flota: la API no está disponible.</p>}
-          {available && vehicles.length === 0 && <p className="empty-state">No hay vehículos registrados.</p>}
+          {available && listedTotal === 0 && <p className="empty-state">No hay vehículos registrados.</p>}
 
           <ul className="vehicle-list">
-            {vehicles.map((vehicle) => (
+            {listedVehicles.map((vehicle) => (
               <li key={vehicle.id} className={vehicle.status === 'ACTIVO' ? '' : 'inactive'}>
                 <div>
                   <strong>{vehicle.plate}</strong>
@@ -254,6 +288,7 @@ function FleetPanel({ vehicles, available, canManage, onChanged }) {
               </li>
             ))}
           </ul>
+          <PaginationControls page={page} totalPages={listedTotalPages} total={listedTotal} onPageChange={handlePageChange} />
         </div>
       </div>
 

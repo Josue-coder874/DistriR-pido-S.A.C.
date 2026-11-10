@@ -9,5 +9,12 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    coverage: {
+      include: ['src/**/*.{js,jsx}'],
+      exclude: ['src/**/*.test.{js,jsx}', 'src/test/**'],
+      thresholds: {
+        lines: 80,
+      },
+    },
   },
 });

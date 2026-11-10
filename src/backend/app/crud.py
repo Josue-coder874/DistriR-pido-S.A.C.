@@ -9,6 +9,13 @@ def get_customers(db: Session) -> list[Customer]:
     return db.query(Customer).order_by(Customer.id).all()
 
 
+def get_customers_page(db: Session, page: int, page_size: int) -> tuple[list[Customer], int]:
+    query = db.query(Customer)
+    total = query.count()
+    items = query.order_by(Customer.id).offset((page - 1) * page_size).limit(page_size).all()
+    return items, total
+
+
 def create_customer(db: Session, customer: CustomerCreate) -> Customer:
     new_customer = Customer(
         name=customer.name,
@@ -16,11 +23,21 @@ def create_customer(db: Session, customer: CustomerCreate) -> Customer:
         latitude=customer.latitude,
         longitude=customer.longitude,
         priority=customer.priority,
+        demand_kg=customer.demand_kg,
+        window_start=customer.window_start,
+        window_end=customer.window_end,
     )
     db.add(new_customer)
     db.commit()
     db.refresh(new_customer)
     return new_customer
+
+
+def update_customer_demand(db: Session, customer: Customer, demand_kg: float) -> Customer:
+    customer.demand_kg = demand_kg
+    db.commit()
+    db.refresh(customer)
+    return customer
 
 
 def delete_all_customers(db: Session) -> int:
@@ -34,6 +51,17 @@ def get_vehicles(db: Session, include_retired: bool = False) -> list[Vehicle]:
     if not include_retired:
         query = query.filter(Vehicle.status != "DE_BAJA")
     return query.order_by(Vehicle.id).all()
+
+
+def get_vehicles_page(
+    db: Session, page: int, page_size: int, include_retired: bool = False
+) -> tuple[list[Vehicle], int]:
+    query = db.query(Vehicle)
+    if not include_retired:
+        query = query.filter(Vehicle.status != "DE_BAJA")
+    total = query.count()
+    items = query.order_by(Vehicle.id).offset((page - 1) * page_size).limit(page_size).all()
+    return items, total
 
 
 def get_vehicle(db: Session, vehicle_id: int) -> Vehicle | None:

@@ -1,8 +1,9 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { apiErrorMessage, apiFetch, jsonRequest } from './api';
-import { can, ROLE_LABELS } from './auth';
+import { can } from './auth';
 import ConfirmDialog from './components/ConfirmDialog';
 import FleetPanel, { FUEL_LABELS } from './components/FleetPanel';
+import PaginationControls from './components/PaginationControls';
 import UserBar from './components/UserBar';
 
 const DashboardView = lazy(() => import('./components/DashboardView'));
@@ -10,10 +11,10 @@ const OrdersView = lazy(() => import('./components/OrdersView'));
 const RouteView = lazy(() => import('./components/RouteView'));
 
 const fallbackCustomers = [
-  { id: 1, name: 'Cliente A', address: 'Av. Central 100', latitude: -12.0464, longitude: -77.0428, priority: 1 },
-  { id: 2, name: 'Cliente B', address: 'Jr. Los Pinos 220', latitude: -12.0526, longitude: -77.0450, priority: 2 },
-  { id: 3, name: 'Cliente C', address: 'Calle San Martín 35', latitude: -12.0589, longitude: -77.0472, priority: 3 },
-  { id: 4, name: 'Cliente D', address: 'Av. Brasil 480', latitude: -12.0748, longitude: -77.0532, priority: 4 },
+  { id: 1, name: 'Cliente A', address: 'Av. Central 100', latitude: -12.0464, longitude: -77.0428, priority: 1, demand_kg: 50 },
+  { id: 2, name: 'Cliente B', address: 'Jr. Los Pinos 220', latitude: -12.0526, longitude: -77.0450, priority: 2, demand_kg: 75 },
+  { id: 3, name: 'Cliente C', address: 'Calle San Martín 35', latitude: -12.0589, longitude: -77.0472, priority: 3, demand_kg: 40 },
+  { id: 4, name: 'Cliente D', address: 'Av. Brasil 480', latitude: -12.0748, longitude: -77.0532, priority: 4, demand_kg: 30 },
 ];
 
 const fallbackResult = {
@@ -40,6 +41,9 @@ const initialForm = {
   latitude: '',
   longitude: '',
   priority: 1,
+  demand_kg: '',
+  window_start: '',
+  window_end: '',
 };
 
 function App({ user, onLogout }) {
@@ -48,6 +52,9 @@ function App({ user, onLogout }) {
   const canOptimize = can(user, 'routes:create');
   const canManageFleet = can(user, 'fleet:write');
   const [customers, setCustomers] = useState(fallbackCustomers);
+  const [customersTotal, setCustomersTotal] = useState(fallbackCustomers.length);
+  const [customerPage, setCustomerPage] = useState(1);
+  const [customerTotalPages, setCustomerTotalPages] = useState(1);
   const [result, setResult] = useState(fallbackResult);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -61,22 +68,38 @@ function App({ user, onLogout }) {
   const [selectedVehicleId, setSelectedVehicleId] = useState('');
   const [activeModule, setActiveModule] = useState('dashboard');
 
-  const fetchCustomers = async () => {
+  const fetchCustomers = async (page = 1) => {
     try {
-      const response = await apiFetch('/customers');
+      const response = await apiFetch(`/customers?page=${page}&page_size=12`);
       const data = await response.json();
-      if (response.ok && Array.isArray(data)) {
-        setCustomers(data);
+      if (response.ok && (Array.isArray(data) || Array.isArray(data.items))) {
+        const items = Array.isArray(data) ? data : data.items;
+        const total = Array.isArray(data) ? data.length : data.total;
+        setCustomers(items);
+        setCustomersTotal(total);
+        setCustomerPage(Array.isArray(data) ? 1 : data.page);
+        setCustomerTotalPages(Array.isArray(data) ? 1 : data.total_pages);
         setApiReady(true);
         // Con la API disponible no se muestran los valores de demostración.
-        setResult((current) => (data.length === 0 || current === fallbackResult ? emptyResult : current));
+        setResult((current) => (total === 0 || current === fallbackResult ? emptyResult : current));
         return;
       }
     } catch (error) {
-      // ignore and keep fallback data
+      if (apiReady) {
+        setMessage('No se pudo cargar la página de clientes desde la API.');
+        return;
+      }
+    }
+
+    if (apiReady) {
+      setMessage('No se pudo cargar la página de clientes desde la API.');
+      return;
     }
 
     setCustomers(fallbackCustomers);
+    setCustomersTotal(fallbackCustomers.length);
+    setCustomerPage(1);
+    setCustomerTotalPages(1);
     setResult(fallbackResult);
   };
 
@@ -114,13 +137,13 @@ function App({ user, onLogout }) {
   const metrics = useMemo(() => {
     const current = result || fallbackResult;
     return [
-      { label: 'Clientes', value: customers.length, accent: 'cyan' },
+      { label: 'Clientes', value: customersTotal, accent: 'cyan' },
       { label: 'Distancia', value: `${current.total_distance_km} km`, accent: 'green' },
       { label: 'Tiempo', value: `${current.estimated_time_minutes} min`, accent: 'amber' },
       { label: 'Costo', value: `S/. ${current.total_cost}`, accent: 'violet' },
       { label: 'CO₂', value: `${current.total_co2_kg} kg`, accent: 'teal' },
     ];
-  }, [customers, result]);
+  }, [customersTotal, result]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -138,6 +161,9 @@ function App({ user, onLogout }) {
       latitude: Number(form.latitude || 0),
       longitude: Number(form.longitude || 0),
       priority: Number(form.priority || 1),
+      demand_kg: Number(form.demand_kg),
+      window_start: form.window_start || null,
+      window_end: form.window_end || null,
     };
 
     try {
@@ -151,7 +177,7 @@ function App({ user, onLogout }) {
 
       setForm(initialForm);
       setMessage('Cliente agregado correctamente.');
-      await fetchCustomers();
+      await fetchCustomers(1);
     } catch (error) {
       setMessage('No se pudo conectar con la API. Se conserva el modo demo.');
     } finally {
@@ -170,7 +196,7 @@ function App({ user, onLogout }) {
         return;
       }
       setMessage('Pedido registrado correctamente.');
-      await fetchCustomers();
+      await fetchCustomers(1);
     } catch (error) {
       setMessage('No se pudo conectar con la API.');
     } finally {
@@ -189,6 +215,9 @@ function App({ user, onLogout }) {
       }
 
       setCustomers([]);
+      setCustomersTotal(0);
+      setCustomerPage(1);
+      setCustomerTotalPages(1);
       setResult(emptyResult);
       setApiReady(true);
       setMessage('Se eliminaron todos los clientes registrados.');
@@ -200,18 +229,38 @@ function App({ user, onLogout }) {
     }
   };
 
+  const handleUpdateCustomerDemand = async (customerId, demandKg) => {
+    setMessage('');
+    try {
+      const response = await apiFetch(`/customers/${customerId}`, jsonRequest('PATCH', { demand_kg: demandKg }));
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        setMessage(apiErrorMessage(data, 'No se pudo actualizar el peso del pedido.'));
+        return;
+      }
+      setMessage('Peso del pedido actualizado.');
+      await fetchCustomers(customerPage);
+    } catch (error) {
+      setMessage('No se pudo conectar con la API.');
+    }
+  };
+
   const handleOptimize = async () => {
     setLoading(true);
     setMessage('');
 
+    const stops = customers.map((customer) => ({
+      id: customer.id,
+      name: customer.name,
+      lat: Number(customer.latitude || -12.05),
+      lng: Number(customer.longitude || -77.04),
+      priority: Number(customer.priority || 1),
+      demand_kg: customer.demand_kg,
+      window_start: customer.window_start || undefined,
+      window_end: customer.window_end || undefined,
+    }));
     const payload = {
-      stops: customers.map((customer) => ({
-        id: customer.id,
-        name: customer.name,
-        lat: Number(customer.latitude || -12.05),
-        lng: Number(customer.longitude || -77.04),
-        priority: Number(customer.priority || 1),
-      })),
+      ...(apiReady ? {} : { stops }),
       vehicle_id: selectedVehicleId ? Number(selectedVehicleId) : undefined,
     };
 
@@ -226,7 +275,11 @@ function App({ user, onLogout }) {
       if (data && data.route) {
         setResult(data);
         setApiReady(true);
-        setMessage('Ruta optimizada con éxito.');
+        setMessage(
+          data.unassigned?.length
+            ? `Optimización completada; ${data.unassigned.length} pedidos quedaron sin asignar.`
+            : 'Ruta optimizada con éxito.',
+        );
       }
     } catch (error) {
       setResult(fallbackResult);
@@ -234,6 +287,11 @@ function App({ user, onLogout }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const navigateTo = (module) => {
+    setMessage('');
+    setActiveModule(module);
   };
 
   return (
@@ -248,43 +306,23 @@ function App({ user, onLogout }) {
         </div>
 
         <div className="topbar-actions">
-          {canOptimize ? (
-            <>
-              <label className="vehicle-select">
-                Vehículo
-                <select value={selectedVehicleId} onChange={(event) => setSelectedVehicleId(event.target.value)}>
-                  <option value="">Sin asignar (referencia diésel)</option>
-                  {activeVehicles.map((vehicle) => (
-                    <option key={vehicle.id} value={String(vehicle.id)}>
-                      {vehicle.plate} · {FUEL_LABELS[vehicle.fuel_type]}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <button className="primary-btn" onClick={handleOptimize} disabled={loading}>
-                {loading ? 'Optimizando...' : 'Optimizar ruta'}
-              </button>
-            </>
-          ) : (
-            <span className="badge">Solo lectura · {ROLE_LABELS[user.role]}</span>
-          )}
           <UserBar user={user} onLogout={onLogout} />
         </div>
       </header>
 
       <main className="dashboard">
         <nav className="module-nav" aria-label="Módulos del sistema">
-          <button className={activeModule === 'dashboard' ? 'active' : ''} onClick={() => setActiveModule('dashboard')}>Dashboard</button>
-          <button className={activeModule === 'orders' ? 'active' : ''} onClick={() => setActiveModule('orders')}>Pedidos</button>
-          <button className={activeModule === 'routes' ? 'active' : ''} onClick={() => setActiveModule('routes')}>Rutas</button>
-          <button className={activeModule === 'fleet' ? 'active' : ''} onClick={() => setActiveModule('fleet')}>Flota</button>
+          <button className={activeModule === 'dashboard' ? 'active' : ''} onClick={() => navigateTo('dashboard')}>Dashboard</button>
+          <button className={activeModule === 'orders' ? 'active' : ''} onClick={() => navigateTo('orders')}>Pedidos</button>
+          <button className={activeModule === 'routes' ? 'active' : ''} onClick={() => navigateTo('routes')}>Rutas</button>
+          <button className={activeModule === 'fleet' ? 'active' : ''} onClick={() => navigateTo('fleet')}>Flota</button>
         </nav>
         <Suspense fallback={<p className="loading" role="status">Cargando módulo...</p>}>
-          {activeModule === 'orders' && <OrdersView customers={customers} canEdit={canEditCustomers} onAddCustomer={handleSubmitCustomerPayload} submitting={submitting} message={message} />}
-          {activeModule === 'routes' && <RouteView result={result} customers={customers} vehicles={vehicles} selectedVehicleId={selectedVehicleId} onVehicleChange={setSelectedVehicleId} onOptimize={handleOptimize} loading={loading} canOptimize={canOptimize} />}
+          {activeModule === 'orders' && <OrdersView customers={customers} total={customersTotal} page={customerPage} totalPages={customerTotalPages} onPageChange={fetchCustomers} canEdit={canEditCustomers} onAddCustomer={handleSubmitCustomerPayload} onUpdateDemand={handleUpdateCustomerDemand} submitting={submitting} message={message} />}
+          {activeModule === 'routes' && <RouteView result={result} customers={customers} vehicles={vehicles} selectedVehicleId={selectedVehicleId} onVehicleChange={setSelectedVehicleId} onOptimize={handleOptimize} loading={loading} canOptimize={canOptimize} message={message} />}
         </Suspense>
 
-        {activeModule === 'fleet' && <section className="module-page"><p>Gestión de flota disponible en el panel del sistema.</p></section>}
+        {activeModule === 'fleet' && <FleetPanel vehicles={vehicles} available={fleetAvailable} canManage={canManageFleet} onChanged={fetchVehicles} />}
 
         {activeModule === 'dashboard' && <>
           <section className="stats-grid">
@@ -309,7 +347,7 @@ function App({ user, onLogout }) {
                       type="button"
                       className="danger-btn"
                       onClick={() => setConfirmOpen(true)}
-                      disabled={customers.length === 0 || clearing}
+                      disabled={customersTotal === 0 || clearing}
                     >
                       Limpiar clientes
                     </button>
@@ -341,6 +379,20 @@ function App({ user, onLogout }) {
                     Prioridad
                     <input name="priority" type="number" min="1" max="10" value={form.priority} onChange={handleChange} required />
                   </label>
+                  <label>
+                    Demanda del pedido (kg)
+                    <input name="demand_kg" type="number" min="0.001" step="0.001" value={form.demand_kg} onChange={handleChange} required />
+                  </label>
+                  <div className="two-columns">
+                    <label>
+                      Entrega desde
+                      <input name="window_start" type="time" value={form.window_start} onChange={handleChange} required={Boolean(form.window_end)} />
+                    </label>
+                    <label>
+                      Entrega hasta
+                      <input name="window_end" type="time" value={form.window_end} onChange={handleChange} required={Boolean(form.window_start)} />
+                    </label>
+                  </div>
                   <button className="secondary-btn" type="submit" disabled={submitting}>
                     {submitting ? 'Guardando...' : 'Agregar cliente'}
                   </button>
@@ -358,10 +410,20 @@ function App({ user, onLogout }) {
                     <div>
                       <strong>{customer.name}</strong>
                       <small>{customer.address}</small>
+                      <small>{customer.demand_kg == null ? 'Peso del pedido pendiente' : `Demanda: ${customer.demand_kg} kg`}</small>
+                      {customer.window_start && customer.window_end && (
+                        <small>Entrega: {customer.window_start.slice(0, 5)}–{customer.window_end.slice(0, 5)}</small>
+                      )}
                     </div>
                   </li>
                 ))}
               </ul>
+              <PaginationControls
+                page={customerPage}
+                totalPages={customerTotalPages}
+                total={customersTotal}
+                onPageChange={fetchCustomers}
+              />
             </div>
 
             <div className="panel">

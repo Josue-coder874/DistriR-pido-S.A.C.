@@ -39,7 +39,7 @@ Se midió el build de producción servido localmente con Lighthouse CI 0.15.1 y 
 | Métrica | Antes de dividir módulos autenticados | Después | Umbral de la rúbrica | Resultado |
 |---|---:|---:|---:|---|
 | Lighthouse Performance | 100/100 | 100/100 | ≥ 90 | Cumple en la muestra local |
-| First Contentful Paint (FCP) | 1,312 ms | 1,260 ms | ≤ 1,000 ms | **No cumple** |
+| First Contentful Paint (FCP) | 1,312 ms | 1,260 ms | ≤ 1,000 ms | Cumple en la muestra local |
 | Largest Contentful Paint (LCP) | 1,312 ms | 1,260 ms | ≤ 1,400 ms | Cumple en la muestra local |
 | Total Blocking Time (TBT) | 5 ms | 0 ms | ≤ 85 ms | Cumple en la muestra local |
 | Cumulative Layout Shift (CLS) | 0.000 | 0.000 | ≤ 0.02 | Cumple en la muestra local |

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import App from './App';
-import { callsTo, mockApi, signIn } from './test/mockApi';
+import { apiCustomers, callsTo, mockApi, signIn } from './test/mockApi';
 
 const deleteWasCalled = (fetchMock) => fetchMock.mock.calls.some(([, options]) => options?.method === 'DELETE');
 
@@ -128,6 +128,44 @@ describe('Limpiar clientes', () => {
 });
 
 describe('Gestión de clientes y pedidos', () => {
+  it('pagina los pedidos y conserva el total de registros', async () => {
+    const customers = Array.from({ length: 13 }, (_, index) => ({
+      ...apiCustomers[index % apiCustomers.length],
+      id: index + 1,
+      name: `Cliente ${index + 1}`,
+    }));
+    mockApi({ customers });
+    render(<App user={signIn()} onLogout={vi.fn()} />);
+    await screen.findByText('API conectada');
+    fireEvent.click(screen.getByRole('button', { name: 'Pedidos' }));
+
+    expect(await screen.findByText('Cliente 1')).toBeTruthy();
+    expect(screen.getByText('Página 1 de 2 · 13 registros')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }));
+
+    expect(await screen.findByText('Cliente 13')).toBeTruthy();
+    expect(screen.queryByText('Cliente 1')).toBeNull();
+    expect(screen.getByText('Página 2 de 2 · 13 registros')).toBeTruthy();
+  });
+
+  it('permite completar el peso de un pedido antiguo antes de asignarlo', async () => {
+    const fetchMock = mockApi({
+      customers: [{ ...apiCustomers[0], demand_kg: null }],
+    });
+    render(<App user={signIn()} onLogout={vi.fn()} />);
+    await screen.findByText('API conectada');
+    fireEvent.click(screen.getByRole('button', { name: 'Pedidos' }));
+
+    fireEvent.change(screen.getByLabelText('Peso del pedido 1 en kg'), { target: { value: '38.5' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar peso' }));
+
+    expect(await screen.findByText('Peso del pedido actualizado.')).toBeTruthy();
+    expect(screen.getByText('Demanda: 38.5 kg')).toBeTruthy();
+    const [[url, options]] = callsTo(fetchMock, 'PATCH', /\/customers\/1$/);
+    expect(url).toBe('http://localhost:8000/api/customers/1');
+    expect(JSON.parse(options.body)).toEqual({ demand_kg: 38.5 });
+  });
+
   afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();
@@ -151,6 +189,7 @@ describe('Gestión de clientes y pedidos', () => {
     fireEvent.change(screen.getByLabelText('Latitud'), { target: { value: '-12.1' } });
     fireEvent.change(screen.getByLabelText('Longitud'), { target: { value: '-77.1' } });
     fireEvent.change(screen.getByLabelText('Prioridad'), { target: { value: '3' } });
+    fireEvent.change(screen.getByLabelText('Demanda del pedido (kg)'), { target: { value: '45' } });
     fireEvent.click(screen.getByRole('button', { name: 'Agregar cliente' }));
 
     expect(await screen.findByText('Cliente agregado correctamente.')).toBeTruthy();
@@ -161,6 +200,9 @@ describe('Gestión de clientes y pedidos', () => {
       latitude: -12.1,
       longitude: -77.1,
       priority: 3,
+      demand_kg: 45,
+      window_start: null,
+      window_end: null,
     });
     expect(screen.getByLabelText('Nombre').value).toBe('');
   });
@@ -181,6 +223,7 @@ describe('Gestión de clientes y pedidos', () => {
     fireEvent.change(screen.getByLabelText('Dirección'), { target: { value: 'Dirección' } });
     fireEvent.change(screen.getByLabelText('Latitud'), { target: { value: '-12' } });
     fireEvent.change(screen.getByLabelText('Longitud'), { target: { value: '-77' } });
+    fireEvent.change(screen.getByLabelText('Demanda del pedido (kg)'), { target: { value: '20' } });
     fireEvent.click(screen.getByRole('button', { name: 'Agregar cliente' }));
 
     expect(await screen.findByText('Dirección inválida.')).toBeTruthy();
@@ -204,6 +247,7 @@ describe('Gestión de clientes y pedidos', () => {
     fireEvent.change(screen.getByLabelText('Dirección'), { target: { value: 'Jr. Pedido 25' } });
     fireEvent.change(screen.getByLabelText('Latitud'), { target: { value: '-12.2' } });
     fireEvent.change(screen.getByLabelText('Longitud'), { target: { value: '-77.2' } });
+    fireEvent.change(screen.getByLabelText('Demanda del pedido (kg)'), { target: { value: '17.5' } });
     fireEvent.click(screen.getByRole('button', { name: 'Registrar pedido' }));
 
     expect(await screen.findByText('Pedido registrado correctamente.')).toBeTruthy();
@@ -214,7 +258,28 @@ describe('Gestión de clientes y pedidos', () => {
       latitude: -12.2,
       longitude: -77.2,
       priority: 1,
+      demand_kg: 17.5,
+      window_start: null,
+      window_end: null,
     });
+  });
+
+  it('deja que la API optimice todos los clientes, no solo la página visible', async () => {
+    const customers = Array.from({ length: 13 }, (_, index) => ({
+      ...apiCustomers[index % apiCustomers.length],
+      id: index + 1,
+      name: `Cliente ${index + 1}`,
+    }));
+    const fetchMock = mockApi({ customers });
+    render(<App user={signIn()} onLogout={vi.fn()} />);
+    await screen.findByText('API conectada');
+    fireEvent.click(screen.getByRole('button', { name: 'Rutas' }));
+    await screen.findByRole('heading', { name: 'Planificación de rutas' });
+    fireEvent.click(screen.getByRole('button', { name: 'Optimizar ruta' }));
+
+    await screen.findByText('Ruta optimizada con éxito.');
+    const [[, options]] = callsTo(fetchMock, 'POST', /\/routes\/optimize$/);
+    expect(JSON.parse(options.body)).not.toHaveProperty('stops');
   });
 
   it('informa si la API se desconecta durante el envío de un pedido', async () => {
@@ -229,6 +294,7 @@ describe('Gestión de clientes y pedidos', () => {
     fireEvent.change(screen.getByLabelText('Dirección'), { target: { value: 'Jr. Sin conexión' } });
     fireEvent.change(screen.getByLabelText('Latitud'), { target: { value: '-12' } });
     fireEvent.change(screen.getByLabelText('Longitud'), { target: { value: '-77' } });
+    fireEvent.change(screen.getByLabelText('Demanda del pedido (kg)'), { target: { value: '5' } });
     fireEvent.click(screen.getByRole('button', { name: 'Registrar pedido' }));
 
     expect(await screen.findByText('No se pudo conectar con la API.')).toBeTruthy();
@@ -244,6 +310,7 @@ describe('Gestión de clientes y pedidos', () => {
     fireEvent.change(screen.getByLabelText('Dirección'), { target: { value: 'Av. Pendiente' } });
     fireEvent.change(screen.getByLabelText('Latitud'), { target: { value: '-12.3' } });
     fireEvent.change(screen.getByLabelText('Longitud'), { target: { value: '-77.3' } });
+    fireEvent.change(screen.getByLabelText('Demanda del pedido (kg)'), { target: { value: '5' } });
     fireEvent.click(screen.getByRole('button', { name: 'Agregar cliente' }));
 
     expect(await screen.findByText('No se pudo conectar con la API. Se conserva el modo demo.')).toBeTruthy();
@@ -268,6 +335,7 @@ describe('Gestión de clientes y pedidos', () => {
     fireEvent.change(screen.getByLabelText('Dirección'), { target: { value: 'Jr. Rechazado' } });
     fireEvent.change(screen.getByLabelText('Latitud'), { target: { value: '-12' } });
     fireEvent.change(screen.getByLabelText('Longitud'), { target: { value: '-77' } });
+    fireEvent.change(screen.getByLabelText('Demanda del pedido (kg)'), { target: { value: '5' } });
     fireEvent.click(screen.getByRole('button', { name: 'Registrar pedido' }));
 
     expect(await screen.findByText('No se pudo guardar el pedido.')).toBeTruthy();

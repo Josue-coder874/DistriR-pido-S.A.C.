@@ -403,6 +403,63 @@ h3 {
   color: var(--color-muted);
 }
 
+.demand-form {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.demand-form label {
+  min-width: min(100%, 170px);
+  color: var(--color-muted);
+  font-size: 0.85rem;
+}
+
+.demand-form input {
+  width: 100%;
+}
+
+.assigned-route {
+  margin: 14px 0;
+  padding: 14px;
+  border: 1px solid #e6efed;
+  border-radius: 12px;
+}
+
+.assigned-route h4,
+.unassigned-list {
+  margin: 0 0 10px;
+}
+
+.unassigned-list {
+  padding-left: 1.25rem;
+}
+
+.unassigned-list li {
+  margin: 8px 0;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+  color: var(--color-muted);
+  font-size: 0.9rem;
+}
+
+.pagination > div {
+  display: flex;
+  gap: 8px;
+}
+
+.pagination .secondary-btn:disabled {
+  cursor: not-allowed;
+}
+
 .route-track {
   display: flex;
   flex-direction: column;
@@ -836,6 +893,61 @@ h3 {
   font-weight: 800;
 }
 
+.route-map {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: #edf4f2;
+}
+
+.route-map-canvas {
+  display: block;
+  width: 100%;
+  height: 360px;
+}
+
+.route-map-controls {
+  position: absolute;
+  z-index: 1;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  gap: 5px;
+}
+
+.route-map-controls button {
+  width: 36px;
+  height: 36px;
+  border: 1px solid #c9d8d5;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(18, 59, 69, 0.18);
+  color: var(--color-navy);
+  cursor: pointer;
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.map-attribution {
+  margin: 0;
+  padding: 5px 9px;
+  color: var(--color-muted);
+  font-size: 0.7rem;
+  text-align: right;
+}
+
+.map-note {
+  margin: 0;
+  padding: 0 9px 8px;
+  color: var(--color-muted);
+  font-size: 0.72rem;
+}
+
+.map-attribution a {
+  color: var(--color-green-dark);
+}
+
 .fleet-grid {
   display: grid;
   grid-template-columns: minmax(270px, 0.9fr) minmax(0, 1.2fr);
@@ -854,6 +966,11 @@ h3 {
 
   .topbar-actions {
     flex: 0 0 auto;
+  }
+
+  .pagination {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .content-grid,

@@ -7,7 +7,8 @@ import pytest
 # La base de pruebas se define antes de importar la app para no tocar app.db.
 _TEST_DB = Path(tempfile.mkdtemp()) / "test.db"
 os.environ["DATABASE_URL"] = f"sqlite:///{_TEST_DB.as_posix()}"
-os.environ["SECRET_KEY"] = "clave-solo-para-pruebas"
+TEST_SECRET_KEY = "test-secret-key-for-jwt-signing-at-least-32-bytes"
+os.environ["SECRET_KEY"] = TEST_SECRET_KEY
 os.environ["FRONTEND_URL"] = "http://localhost:5173"
 os.environ["SMTP_HOST"] = ""
 

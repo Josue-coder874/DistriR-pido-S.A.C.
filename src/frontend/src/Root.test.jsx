@@ -50,7 +50,7 @@ describe('Inicio de sesión (RF-001)', () => {
     const [[, options]] = callsTo(fetchMock, 'POST', /\/auth\/login$/);
     expect(JSON.parse(options.body)).toEqual({ email: 'admin@distrirapido.pe', password: TEST_PASSWORD });
     // Las peticiones posteriores llevan el token.
-    const [[, customersOptions]] = callsTo(fetchMock, 'GET', /\/customers$/);
+    const [[, customersOptions]] = callsTo(fetchMock, 'GET', /\/customers(?:\?|$)/);
     expect(customersOptions.headers.Authorization).toBe('Bearer token-1');
   });
 
@@ -204,7 +204,7 @@ describe('Panel según el rol (RF-010)', () => {
     expect(screen.getByRole('heading', { name: 'Mi ruta' })).toBeTruthy();
     expect(screen.getByText(/Aún no tienes una ruta asignada/)).toBeTruthy();
     expect(screen.queryByText('Planificador de rutas')).toBeNull();
-    expect(callsTo(fetchMock, 'GET', /\/(customers|vehicles)$/)).toHaveLength(0);
+    expect(callsTo(fetchMock, 'GET', /\/(customers|vehicles)(?:\?|$)/)).toHaveLength(0);
   });
 });
 

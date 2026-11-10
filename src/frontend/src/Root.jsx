@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
-import App from './App';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { apiFetch } from './api';
 import { clearSession, loadSession, onSessionExpired, saveSession } from './auth';
-import DriverPanel from './components/DriverPanel';
 import { LoginPage, ResetPasswordPage } from './components/LoginPage';
+
+const App = lazy(() => import('./App'));
+const DriverPanel = lazy(() => import('./components/DriverPanel'));
 
 const readResetToken = () => new URLSearchParams(window.location.search).get('reset_token');
 
@@ -82,9 +83,17 @@ function Root() {
     return <LoginPage key={notice} onLogin={handleLogin} notice={notice} />;
   }
   if (session.user.role === 'CONDUCTOR') {
-    return <DriverPanel user={session.user} onLogout={handleLogout} />;
+    return (
+      <Suspense fallback={<p className="loading" role="status">Cargando módulo...</p>}>
+        <DriverPanel user={session.user} onLogout={handleLogout} />
+      </Suspense>
+    );
   }
-  return <App user={session.user} onLogout={handleLogout} />;
+  return (
+    <Suspense fallback={<p className="loading" role="status">Cargando módulo...</p>}>
+      <App user={session.user} onLogout={handleLogout} />
+    </Suspense>
+  );
 }
 
 export default Root;

@@ -20,8 +20,8 @@ export function signIn(role = 'ADMINISTRADOR') {
 }
 
 export const apiCustomers = [
-  { id: 1, name: 'Cliente A', address: 'Av. Central 100', latitude: -12.0464, longitude: -77.0428, priority: 1 },
-  { id: 2, name: 'Cliente B', address: 'Jr. Los Pinos 220', latitude: -12.0526, longitude: -77.045, priority: 2 },
+  { id: 1, name: 'Cliente A', address: 'Av. Central 100', latitude: -12.0464, longitude: -77.0428, priority: 1, demand_kg: 50 },
+  { id: 2, name: 'Cliente B', address: 'Jr. Los Pinos 220', latitude: -12.0526, longitude: -77.045, priority: 2, demand_kg: 75 },
 ];
 
 export const apiVehicles = [
@@ -31,6 +31,10 @@ export const apiVehicles = [
 
 export const optimizedResult = {
   route: ['Cliente A', 'Cliente B'],
+  route_stops: [
+    { id: 1, name: 'Cliente A', lat: -12.0464, lng: -77.0428 },
+    { id: 2, name: 'Cliente B', lat: -12.0526, lng: -77.045 },
+  ],
   total_distance_km: 0.73,
   estimated_time_minutes: 22,
   total_cost: 1.21,
@@ -64,8 +68,10 @@ export function mockApi({
     }
     const method = options.method || 'GET';
     const body = options.body ? JSON.parse(options.body) : null;
-    const path = url.replace(/^.*\/api/, '');
+    const parsedUrl = new URL(url, 'http://localhost');
+    const path = parsedUrl.pathname.replace(/^.*\/api/, '');
     const vehicleMatch = path.match(/^\/vehicles\/(\d+)$/);
+    const customerMatch = path.match(/^\/customers\/(\d+)$/);
 
     if (path === '/auth/login') {
       const user = Object.values(apiUsers).find((item) => item.email === body.email.trim().toLowerCase());
@@ -113,7 +119,27 @@ export function mockApi({
     }
 
     if (path === '/customers' && method === 'GET') {
+      if (parsedUrl.searchParams.has('page') || parsedUrl.searchParams.has('page_size')) {
+        const page = Number(parsedUrl.searchParams.get('page') || 1);
+        const pageSize = Number(parsedUrl.searchParams.get('page_size') || 12);
+        const start = (page - 1) * pageSize;
+        return reply({
+          items: storedCustomers.slice(start, start + pageSize),
+          total: storedCustomers.length,
+          page,
+          page_size: pageSize,
+          total_pages: Math.ceil(storedCustomers.length / pageSize),
+        });
+      }
       return reply(storedCustomers);
+    }
+    if (customerMatch && method === 'PATCH') {
+      const customer = storedCustomers.find((item) => item.id === Number(customerMatch[1]));
+      if (!customer) {
+        return reply({ detail: 'Pedido no encontrado.' }, false, 404);
+      }
+      Object.assign(customer, body);
+      return reply(customer);
     }
     if (path === '/customers' && method === 'DELETE') {
       if (deleteFails) {
@@ -124,7 +150,22 @@ export function mockApi({
       return reply({ deleted });
     }
     if (path === '/vehicles' && method === 'GET') {
-      return reply(storedVehicles.filter((vehicle) => vehicle.status !== 'DE_BAJA'));
+      const availableVehicles = storedVehicles.filter((vehicle) =>
+        parsedUrl.searchParams.get('include_retired') === 'true' || vehicle.status !== 'DE_BAJA',
+      );
+      if (parsedUrl.searchParams.has('page') || parsedUrl.searchParams.has('page_size')) {
+        const page = Number(parsedUrl.searchParams.get('page') || 1);
+        const pageSize = Number(parsedUrl.searchParams.get('page_size') || 12);
+        const start = (page - 1) * pageSize;
+        return reply({
+          items: availableVehicles.slice(start, start + pageSize),
+          total: availableVehicles.length,
+          page,
+          page_size: pageSize,
+          total_pages: Math.ceil(availableVehicles.length / pageSize),
+        });
+      }
+      return reply(availableVehicles);
     }
     if (path === '/vehicles' && method === 'POST') {
       const plate = body.plate.toUpperCase();

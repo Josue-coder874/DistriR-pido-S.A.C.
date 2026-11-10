@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import App from '../App';
-import { callsTo, mockApi, signIn } from '../test/mockApi';
+import { apiVehicles, callsTo, mockApi, signIn } from '../test/mockApi';
 
 const fleetPanel = () => screen.getByRole('heading', { name: 'Flota' }).closest('section');
 
@@ -35,6 +35,23 @@ describe('Gestión de flota', () => {
     cleanup();
     vi.unstubAllGlobals();
     window.sessionStorage.clear();
+  });
+
+  it('pagina la lista de vehículos sin cambiar el conteo total', async () => {
+    const vehicles = Array.from({ length: 13 }, (_, index) => ({
+      ...apiVehicles[0],
+      id: index + 1,
+      plate: `A${String(index).padStart(2, '0')}-${String(index).padStart(3, '0')}`,
+    }));
+    await renderApp({ vehicles });
+    const panel = within(fleetPanel());
+
+    expect(await panel.findByText('A00-000')).toBeTruthy();
+    expect(panel.getByText('Página 1 de 2 · 13 registros')).toBeTruthy();
+    fireEvent.click(panel.getByRole('button', { name: 'Siguiente' }));
+
+    expect(await panel.findByText('A12-012')).toBeTruthy();
+    expect(panel.getByText('Página 2 de 2 · 13 registros')).toBeTruthy();
   });
 
   it('lista los vehículos registrados con sus datos y estado', async () => {
@@ -144,7 +161,7 @@ describe('Gestión de flota', () => {
 
     await openRoutes();
     const options = within(vehicleSelect()).getAllByRole('option').map((option) => option.textContent);
-    expect(options).toEqual(['Sin asignar (referencia diésel)', 'ABC-123 · Diésel']);
+    expect(options).toEqual(['Asignación automática (vehículos activos)', 'ABC-123 · Diésel']);
   });
 
   it('dar de baja pide confirmación y retira el vehículo de la lista', async () => {

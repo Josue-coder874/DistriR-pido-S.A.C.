@@ -1,6 +1,6 @@
-from datetime import datetime, timezone
+from datetime import datetime, time, timezone
 
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, String
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Time
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -15,6 +15,9 @@ class Customer(Base):
     latitude: Mapped[float] = mapped_column(Float, default=0.0)
     longitude: Mapped[float] = mapped_column(Float, default=0.0)
     priority: Mapped[int] = mapped_column(Integer, default=1)
+    demand_kg: Mapped[float | None] = mapped_column(Float, nullable=True)
+    window_start: Mapped[time | None] = mapped_column(Time, nullable=True)
+    window_end: Mapped[time | None] = mapped_column(Time, nullable=True)
 
 
 class Vehicle(Base):

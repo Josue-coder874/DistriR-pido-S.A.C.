@@ -5,14 +5,15 @@ from app.models import AuditLog
 
 ADMIN, DISPATCHER, DRIVER, AUDITOR = "ADMINISTRADOR", "DESPACHADOR", "CONDUCTOR", "AUDITOR"
 
-CUSTOMER = {"name": "Cliente A", "address": "Av. Central 100", "latitude": -12.0464, "longitude": -77.0428}
+CUSTOMER = {"name": "Cliente A", "address": "Av. Central 100", "latitude": -12.0464, "longitude": -77.0428, "demand_kg": 1}
 VEHICLE = {"plate": "ABC-123", "capacity_kg": 1000, "fuel_type": "diesel"}
-STOPS = {"stops": [{"id": 1, "name": "Cliente A", "lat": -12.0464, "lng": -77.0428}]}
+STOPS = {"stops": [{"id": 1, "name": "Cliente A", "lat": -12.0464, "lng": -77.0428, "demand_kg": 1}]}
 
 # Matriz de control de acceso (docs/01 Inicio/08. Usuarios, sección 3).
 ENDPOINTS = [
     ("GET", "/api/customers", None, {ADMIN, DISPATCHER, AUDITOR}),
     ("POST", "/api/customers", CUSTOMER, {ADMIN, DISPATCHER}),
+    ("PATCH", "/api/customers/{customer_id}", {"demand_kg": 2}, {ADMIN, DISPATCHER}),
     ("DELETE", "/api/customers", None, {ADMIN}),
     ("GET", "/api/vehicles", None, {ADMIN, DISPATCHER, AUDITOR}),
     ("POST", "/api/vehicles", VEHICLE, {ADMIN}),
@@ -33,9 +34,18 @@ def vehicle_id(client):
     return client.post("/api/vehicles", json={**VEHICLE, "plate": "XYZ-789"}).json()["id"]
 
 
+@pytest.fixture
+def customer_id(client):
+    return client.post("/api/customers", json=CUSTOMER).json()["id"]
+
+
 @pytest.mark.parametrize("method, path, body, role, allowed", CASES)
-def test_access_matrix(client_as, vehicle_id, method, path, body, role, allowed):
-    response = client_as(role).request(method, path.format(vehicle_id=vehicle_id), json=body)
+def test_access_matrix(client_as, vehicle_id, customer_id, method, path, body, role, allowed):
+    response = client_as(role).request(
+        method,
+        path.format(vehicle_id=vehicle_id, customer_id=customer_id),
+        json=body,
+    )
 
     if allowed:
         assert response.status_code in (200, 201), response.text
@@ -46,7 +56,7 @@ def test_access_matrix(client_as, vehicle_id, method, path, body, role, allowed)
 
 @pytest.mark.parametrize("method, path, body", [(m, p, b) for m, p, b, _ in ENDPOINTS])
 def test_endpoints_require_session(anon_client, method, path, body):
-    response = anon_client.request(method, path.format(vehicle_id=1), json=body)
+    response = anon_client.request(method, path.format(vehicle_id=1, customer_id=1), json=body)
 
     assert response.status_code == 401
 

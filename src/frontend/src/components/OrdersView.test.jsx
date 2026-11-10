@@ -22,6 +22,9 @@ describe('OrdersView', () => {
     fireEvent.change(screen.getByLabelText('Latitud'), { target: { value: '-12.05' } });
     fireEvent.change(screen.getByLabelText('Longitud'), { target: { value: '-77.04' } });
     fireEvent.change(screen.getByLabelText('Prioridad'), { target: { value: '4' } });
+    fireEvent.change(screen.getByLabelText('Demanda del pedido (kg)'), { target: { value: '62.5' } });
+    fireEvent.change(screen.getByLabelText('Entrega desde'), { target: { value: '09:00' } });
+    fireEvent.change(screen.getByLabelText('Entrega hasta'), { target: { value: '11:30' } });
     fireEvent.click(screen.getByRole('button', { name: 'Registrar pedido' }));
 
     expect(onAddCustomer).toHaveBeenCalledWith({
@@ -30,15 +33,35 @@ describe('OrdersView', () => {
       latitude: -12.05,
       longitude: -77.04,
       priority: 4,
+      demand_kg: 62.5,
+      window_start: '09:00',
+      window_end: '11:30',
     });
     expect(screen.getByLabelText('Cliente').value).toBe('');
     expect(screen.getByLabelText('Dirección').value).toBe('');
     expect(screen.getByLabelText('Latitud').value).toBe('');
     expect(screen.getByLabelText('Longitud').value).toBe('');
     expect(screen.getByLabelText('Prioridad').value).toBe('1');
+    expect(screen.getByLabelText('Demanda del pedido (kg)').value).toBe('');
+    expect(screen.getByLabelText('Entrega desde').value).toBe('');
+    expect(screen.getByLabelText('Entrega hasta').value).toBe('');
     expect(screen.getByText('1 registros')).toBeTruthy();
     expect(screen.getByText('Cliente Uno')).toBeTruthy();
     expect(screen.getByText('Av. Lima 123')).toBeTruthy();
+  });
+
+  it('muestra la ventana de entrega en el listado', () => {
+    render(
+      <OrdersView
+        customers={[{ id: 1, name: 'Cliente Uno', address: 'Av. Lima 123', window_start: '09:00:00', window_end: '11:30:00' }]}
+        canEdit={false}
+        onAddCustomer={vi.fn()}
+        submitting={false}
+        message=""
+      />,
+    );
+
+    expect(screen.getByText('Entrega: 09:00–11:30')).toBeTruthy();
   });
 
   it('muestra mensaje de estado y desactiva el envío mientras guarda', () => {

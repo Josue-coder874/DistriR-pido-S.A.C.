@@ -6,7 +6,7 @@ import pytest
 from app.database import SessionLocal
 from app.models import AuditLog, User, utcnow
 from app.services import auth_service, email_service
-from tests.conftest import TEST_PASSWORD, USER_EMAILS, token_for
+from tests.conftest import TEST_PASSWORD, TEST_SECRET_KEY, USER_EMAILS, token_for
 
 ADMIN_EMAIL = USER_EMAILS["ADMINISTRADOR"]
 INVALID = "Correo o contraseña incorrectos."
@@ -229,10 +229,14 @@ def test_me_requires_token(anon_client):
     "token",
     [
         "no-es-un-jwt",
-        jwt.encode({"sub": "1", "iat": 0, "exp": 9999999999}, "otra-clave", algorithm="HS256"),
-        jwt.encode({"sub": "1", "iat": 0, "exp": 1}, "clave-solo-para-pruebas", algorithm="HS256"),
-        jwt.encode({"sub": "abc", "iat": 0, "exp": 9999999999}, "clave-solo-para-pruebas", algorithm="HS256"),
-        jwt.encode({"sub": "1", "exp": 9999999999}, "clave-solo-para-pruebas", algorithm="HS256"),
+        jwt.encode(
+            {"sub": "1", "iat": 0, "exp": 9999999999},
+            "otra-clave-de-prueba-con-32-bytes-minimo",
+            algorithm="HS256",
+        ),
+        jwt.encode({"sub": "1", "iat": 0, "exp": 1}, TEST_SECRET_KEY, algorithm="HS256"),
+        jwt.encode({"sub": "abc", "iat": 0, "exp": 9999999999}, TEST_SECRET_KEY, algorithm="HS256"),
+        jwt.encode({"sub": "1", "exp": 9999999999}, TEST_SECRET_KEY, algorithm="HS256"),
     ],
     ids=["basura", "otra-firma", "expirado", "sub-invalido", "sin-iat"],
 )
@@ -357,7 +361,7 @@ def test_reset_invalidates_existing_sessions(anon_client, sent_emails):
     db.close()
     issued = int(datetime.now(timezone.utc).timestamp()) - 60
     old_token = jwt.encode(
-        {"sub": str(user_id), "iat": issued, "exp": issued + 3600}, "clave-solo-para-pruebas", algorithm="HS256"
+        {"sub": str(user_id), "iat": issued, "exp": issued + 3600}, TEST_SECRET_KEY, algorithm="HS256"
     )
     assert anon_client.get("/api/auth/me", headers=bearer(old_token)).status_code == 200
 

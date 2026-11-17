@@ -3,7 +3,7 @@
 # Análisis Playwright
 
 **Proyecto:** EcoLogística Lima – DistriRápido S.A.C.
-**Versión:** V_1_0_2
+**Versión:** V_1_0_3
 **Fecha del informe:** 2026-11-17
 
 ## Alcance y arquitectura
@@ -38,7 +38,7 @@ Ejecución reproducible exigida: usar el mismo commit y datos reinicializados, e
 
 `casos aprobados al primer intento / casos ejecutados × 100`
 
-Estado al 2026-11-17: la ejecución GitHub Actions 44201095586 falló durante la instalación de los navegadores. Playwright 1.55 no soporta el runner `ubuntu-latest` resuelto como Ubuntu 26.04. Se cambió el runner del workflow a `ubuntu-24.04`; falta que la nueva ejecución termine para confirmar la suite. No hay reporte HTML aprobado ni tasa E2E verificada.
+Estado al 2026-11-17: la ejecución GitHub Actions 44202334520 instaló Chromium, Firefox y WebKit en `ubuntu-24.04`, pero falló al arrancar porque `@playwright/test` no estaba declarado como dependencia local (`ERR_MODULE_NOT_FOUND`). Se corrigió el manifiesto/lockfile agregando `@playwright/test` 1.55.0 y el comando ahora invoca el binario local. Está pendiente ejecutar de nuevo el workflow con esa corrección. La prueba positiva de login requiere además los secretos `E2E_EMAIL` y `E2E_PASSWORD`.
 
 Las pruebas unitarias/integración del backend local pasaron 172/172 con Python 3.12; las pruebas unitarias frontend pasaron 89/89 y `npm run build` finalizó correctamente. Vitest se configuró para descubrir solamente `src/**/*.test.{js,jsx}`, evitando importar las pruebas Playwright como pruebas unitarias.
 
@@ -89,7 +89,18 @@ Para cada endpoint ordinario se realizan al menos 30 solicitudes secuenciales. L
 
 El endpoint `/api/routes/optimize` debe medirse aparte con una carga identificada, por ejemplo 150 pedidos y 15 vehículos. Los tiempos de este escenario no se mezclan con los endpoints ordinarios.
 
-Estado al 2026-11-17: existen las muestras API preliminares descritas arriba, pero siguen pendientes las 20 muestras por página de FCP/LCP y una serie repetible desde runner externo. Los percentiles observados de API no cumplen el objetivo de laboratorio p95 < 500 ms y deben confirmarse en el entorno de medición especificado.
+### FCP/LCP de la pantalla pública
+
+Se hicieron 20 cargas consecutivas de `https://distrir-pido-frontend.vercel.app/` en el navegador integrado basado en Chromium (User-Agent Chrome 150) el 2026-11-17. Se registraron FCP y LCP con Performance API en cada carga. El tamaño de viewport y región de red no quedaron expuestos por el runner; no se añadieron cinco cargas de calentamiento separadas.
+
+| Métrica | n | Mediana | p75 | Objetivo |
+|---|---:|---:|---:|---|
+| FCP | 20 | 388 ms | 436 ms | Registro de laboratorio |
+| LCP | 20 | 416 ms | 468 ms | p75 < 2.5 s |
+
+La muestra de login queda bajo el umbral p75 de LCP, pero no se generaliza a módulos autenticados ni sustituye una ejecución con viewport, región y calentamientos controlados.
+
+Estado al 2026-11-17: existen las muestras API preliminares descritas arriba y una muestra FCP/LCP de login. Los percentiles observados de API no cumplen el objetivo de laboratorio p95 < 500 ms; falta repetir el protocolo completo desde runner externo, medir páginas autenticadas y optimizador.
 
 ## Disponibilidad y resiliencia
 
@@ -146,3 +157,4 @@ Los artefactos no deben incluir usuarios, contraseñas, tokens ni URIs privadas.
 | 1.0.0 | 2026-11-17 | Se incorpora la suite Playwright, la configuración multi-navegador y el protocolo de medición. |
 | 1.0.1 | 2026-11-17 | Se documentan resultados de humo observados en Vercel, separándolos de las pruebas E2E, métricas y sondeos todavía pendientes. |
 | 1.0.2 | 2026-11-17 | Se registran resultados de CI, pruebas unitarias y medición preliminar de API; se documentan bloqueos de Playwright/despliegue y se actualiza el runner a Ubuntu 24.04. |
+| 1.0.3 | 2026-11-17 | Se documentan 20 muestras de FCP/LCP de login y el fallo de importación E2E corregido al declarar Playwright como dependencia local. |

@@ -61,9 +61,9 @@ Cada documento incluye un enlace de retorno a este README.
 
 | Documento | Enlace |
 |---|---|
-| 01. Revisión del Sprint | [V_1_0_2](docs/03%20Implementacion/Sprint%204/01%20Revisi%C3%B3n%20del%20Sprint%20V_1_0_2.md) |
-| 02. Retrospectiva del Sprint | [V_1_0_1](docs/03%20Implementacion/Sprint%204/02%20Retrospectiva%20del%20Sprint%20V_1_0_1.md) |
-| 03. Análisis Playwright | [V_1_0_2](docs/03%20Implementacion/Sprint%204/03%20An%C3%A1lisis%20Playwright%20V_1_0_2.md) |
+| 01. Revisión del Sprint | [V_1_0_3](docs/03%20Implementacion/Sprint%204/01%20Revisi%C3%B3n%20del%20Sprint%20V_1_0_3.md) |
+| 02. Retrospectiva del Sprint | [V_1_0_2](docs/03%20Implementacion/Sprint%204/02%20Retrospectiva%20del%20Sprint%20V_1_0_2.md) |
+| 03. Análisis Playwright | [V_1_0_3](docs/03%20Implementacion/Sprint%204/03%20An%C3%A1lisis%20Playwright%20V_1_0_3.md) |
 | 04. Usabilidad SUS | [V_1_0_0](docs/03%20Implementacion/Sprint%204/04%20Usabilidad%20V_1_0_0.md) |
 
 #### Estado de CI/CD

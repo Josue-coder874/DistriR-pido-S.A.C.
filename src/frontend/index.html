@@ -3,10 +3,39 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f2f7f6" />
     <title>EcoLogística Lima</title>
+    <style>
+      :root { color: #17323b; background: #f2f7f6; font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      html, body, #root { min-height: 100%; margin: 0; }
+      body { min-height: 100vh; }
+      .initial-shell { display: grid; min-height: 100vh; place-items: center; padding: 24px 16px; box-sizing: border-box; }
+      .initial-card { width: min(440px, 100%); padding: 30px; border: 1px solid #dce8e5; border-radius: 22px; background: #fff; box-shadow: 0 24px 60px rgba(27, 65, 69, 0.12); box-sizing: border-box; }
+      .initial-brand { display: flex; align-items: center; gap: 13px; }
+      .initial-mark { display: grid; width: 46px; height: 46px; flex: 0 0 auto; place-items: center; border-radius: 15px; background: linear-gradient(145deg, #0ba982, #087962); color: #fff; font-size: 1.2rem; font-weight: 800; }
+      .initial-eyebrow { margin: 0; color: #07866d; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.13em; text-transform: uppercase; }
+      .initial-title { margin: 0.12rem 0 0; color: #123b45; font-size: 1.55rem; line-height: 1.2; }
+      .initial-status { display: flex; align-items: center; gap: 10px; margin-top: 24px; color: #668087; font-size: 0.9rem; }
+      .initial-spinner { width: 16px; height: 16px; flex: 0 0 auto; border: 2px solid #dce8e5; border-top-color: #07866d; border-radius: 50%; animation: initial-spin 700ms linear infinite; }
+      @media (prefers-reduced-motion: reduce) { .initial-spinner { animation: none; border-color: #07866d; } }
+      @keyframes initial-spin { to { transform: rotate(360deg); } }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <main class="initial-shell" id="initial-shell" aria-busy="true" aria-live="polite">
+        <section class="initial-card" aria-label="EcoLogística Lima">
+          <div class="initial-brand">
+            <div class="initial-mark" aria-hidden="true">E</div>
+            <div>
+              <p class="initial-eyebrow">EcoLogística Lima</p>
+              <h1 class="initial-title">Planificador de rutas</h1>
+            </div>
+          </div>
+          <div class="initial-status"><span class="initial-spinner" aria-hidden="true"></span><span>Cargando aplicación...</span></div>
+        </section>
+      </main>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

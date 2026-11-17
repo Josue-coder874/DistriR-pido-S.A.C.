@@ -27,6 +27,8 @@ coverage/
 *.log
 .lighthouseci/
 lhci-reports/
+playwright-report/
+test-results/
 
 # Variables de entorno
 .env

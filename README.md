@@ -57,6 +57,21 @@ Plataforma web de optimización de rutas de distribución para **DistriRápido S
 
 Cada documento incluye un enlace de retorno a este README.
 
+### Entregables del Sprint 4
+
+| Documento | Enlace |
+|---|---|
+| 01. Revisión del Sprint | [V_1_0_0](docs/03%20Implementacion/Sprint%204/01%20Revisi%C3%B3n%20del%20Sprint%20V_1_0_0.md) |
+| 02. Retrospectiva del Sprint | [V_1_0_0](docs/03%20Implementacion/Sprint%204/02%20Retrospectiva%20del%20Sprint%20V_1_0_0.md) |
+| 03. Análisis Playwright | [V_1_0_0](docs/03%20Implementacion/Sprint%204/03%20An%C3%A1lisis%20Playwright%20V_1_0_0.md) |
+| 04. Usabilidad SUS | [V_1_0_0](docs/03%20Implementacion/Sprint%204/04%20Usabilidad%20V_1_0_0.md) |
+
+#### Estado de CI/CD
+
+[![CI](https://github.com/Josue-coder874/DistriR-pido-S.A.C./actions/workflows/ci.yml/badge.svg)](https://github.com/Josue-coder874/DistriR-pido-S.A.C./actions/workflows/ci.yml)
+[![Automated Tests](https://github.com/Josue-coder874/DistriR-pido-S.A.C./actions/workflows/tests.yml/badge.svg)](https://github.com/Josue-coder874/DistriR-pido-S.A.C./actions/workflows/tests.yml)
+[![Deploy Production](https://github.com/Josue-coder874/DistriR-pido-S.A.C./actions/workflows/deploy-production.yml/badge.svg)](https://github.com/Josue-coder874/DistriR-pido-S.A.C./actions/workflows/deploy-production.yml)
+
 ### Entregables del Sprint 3
 
 | Documento | Enlace |

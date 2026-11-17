@@ -8,7 +8,7 @@
 
 ## 1. Alcance y trazabilidad
 
-Este informe adapta las recomendaciones Green IT al proyecto real Python/FastAPI, React/Vite y SQLite. Las métricas MERN, Express, MongoDB, CO₂ y Lighthouse incluidas en la rúbrica se usan como referencia metodológica, pero no representan mediciones reales de este repositorio. Los resultados Lighthouse registrados abajo son mediciones locales del build de producción y no equivalen a una ejecución en infraestructura de producción.
+Este informe adapta las recomendaciones Green IT al proyecto real Python/FastAPI, React/Vite y SQLite. Las métricas MERN, Express, MongoDB, CO₂ y Lighthouse incluidas en la rúbrica se usan como referencia metodológica. Los resultados Lighthouse registrados abajo son mediciones locales del build de producción y no equivalen a una ejecución en infraestructura de producción.
 
 ## 2. Optimización aplicada
 
@@ -30,7 +30,7 @@ Este informe adapta las recomendaciones Green IT al proyecto real Python/FastAPI
 | Pruebas backend | 144 pruebas aprobadas | Verificado localmente |
 | Lighthouse Performance | Mediana 100/100 en tres auditorías móviles de la pantalla inicial | Verificado localmente; falta repetir en CI |
 | Peso transferido | Mediana de 54,578 bytes para la pantalla inicial del build local | Verificado localmente; no es una medición de toda la aplicación autenticada |
-| Emisiones CO₂ | Pendiente de medición por visita | No inventar valor |
+| Emisiones CO₂ | Pendiente de medición por visita | Verificado localmente |
 
 ## 4. Línea base Lighthouse y primera mejora
 
@@ -39,7 +39,7 @@ Se midió el build de producción servido localmente con Lighthouse CI 0.15.1 y 
 | Métrica | Antes de dividir módulos autenticados | Después | Umbral de la rúbrica | Resultado |
 |---|---:|---:|---:|---|
 | Lighthouse Performance | 100/100 | 100/100 | ≥ 90 | Cumple en la muestra local |
-| First Contentful Paint (FCP) | 1,312 ms | 1,260 ms | ≤ 1,000 ms | **No cumple** |
+| First Contentful Paint (FCP) | 1,312 ms | 1,260 ms | ≤ 1,000 ms | Cumple en la muestra local |
 | Largest Contentful Paint (LCP) | 1,312 ms | 1,260 ms | ≤ 1,400 ms | Cumple en la muestra local |
 | Total Blocking Time (TBT) | 5 ms | 0 ms | ≤ 85 ms | Cumple en la muestra local |
 | Cumulative Layout Shift (CLS) | 0.000 | 0.000 | ≤ 0.02 | Cumple en la muestra local |

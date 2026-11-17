@@ -41,7 +41,6 @@ def test_development_settings_allow_only_configured_frontend(monkeypatch, clean_
         ("production", {"FRONTEND_URL": "http://app.example.com"}, "deben usar HTTPS"),
         ("production", {"CORS_ALLOWED_ORIGINS": "*"}, "Origen inválido"),
         ("production", {"CORS_ALLOWED_ORIGINS": "http://app.example.com"}, "deben usar HTTPS"),
-        ("staging", {"SMTP_HOST": ""}, "SMTP_HOST debe estar configurado"),
     ],
 )
 def test_secure_environment_rejects_unsafe_configuration(
@@ -67,3 +66,13 @@ def test_secure_environment_accepts_strong_key_https_origins_and_smtp(monkeypatc
 
     assert settings.cors_allowed_origins == ["https://app.example.com", "https://admin.example.com"]
     assert settings.smtp_host == "smtp.example.com"
+    assert settings.password_reset_enabled
+
+
+def test_secure_environment_without_smtp_disables_password_reset(monkeypatch, clean_settings_cache):
+    set_development_env(monkeypatch, ENVIRONMENT="production", SMTP_HOST="")
+
+    settings = get_settings()
+
+    assert settings.smtp_host is None
+    assert not settings.password_reset_enabled

@@ -95,9 +95,9 @@ npm install
 npm run dev
 ```
 
-El archivo `.env` no se sube al repositorio. Por defecto, el backend usa SQLite y crea/actualiza `src/backend/app.db` para el desarrollo local. Se está preparando la migración del entorno de producción a PostgreSQL en Supabase; hasta completar y verificar la importación de datos y el despliegue, SQLite sigue siendo el único entorno de base de datos operativo. PostgreSQL/PostGIS no se usa para funciones geoespaciales en esta versión.
+El archivo `.env` no se sube al repositorio. Por defecto, el backend usa SQLite y crea/actualiza `src/backend/app.db` para el desarrollo local. El entorno de producción usa PostgreSQL en Supabase, con la migración inicial del esquema y los datos existentes ya aplicados. Backend y frontend se despliegan como proyectos separados en Vercel; consulta las instrucciones de cada módulo en `src/backend/README.md` y `src/frontend/README.md`. PostgreSQL/PostGIS no se usa para funciones geoespaciales en esta versión.
 
-Toda la API requiere inicio de sesión. Los roles disponibles son `ADMINISTRADOR`, `DESPACHADOR`, `CONDUCTOR` y `AUDITOR`. Sin `SMTP_HOST`, el enlace de recuperación de contraseña se muestra en el log del backend.
+Toda la API requiere inicio de sesión. Los roles disponibles son `ADMINISTRADOR`, `DESPACHADOR`, `CONDUCTOR` y `AUDITOR`. En desarrollo, sin `SMTP_HOST`, el enlace de recuperación aparece en el log del backend; en staging/producción, la recuperación se desactiva sin SMTP y no se generan ni registran tokens.
 
 Los pedidos aceptan una ventana de entrega opcional (`window_start` y `window_end`, formato `HH:MM`). Si se indica una hora, ambas son obligatorias y la hora final debe ser posterior a la inicial. El optimizador considera esas ventanas junto con el tiempo estimado de viaje y 10 minutos de atención por parada; si no encuentra una ruta factible dentro del tiempo de optimización, la API responde con `422` en vez de devolver un orden que incumpla los horarios. Al iniciar, el backend agrega automáticamente las columnas de horario que falten en una base SQLite existente. La ruta optimizada incluye coordenadas ordenadas y se visualiza sobre un mapa de OpenStreetMap; la línea entre paradas es esquemática, no sigue calles ni refleja tráfico. El mapa necesita conexión a internet para descargar sus mosaicos.
 

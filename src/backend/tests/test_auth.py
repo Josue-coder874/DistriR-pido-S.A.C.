@@ -4,7 +4,7 @@ import jwt
 import pytest
 
 from app.database import SessionLocal
-from app.models import AuditLog, User, utcnow
+from app.models import AuditLog, PasswordResetToken, User, utcnow
 from app.services import auth_service, email_service
 from tests.conftest import TEST_PASSWORD, TEST_SECRET_KEY, USER_EMAILS, token_for
 
@@ -286,6 +286,26 @@ def test_reset_request_for_unknown_email_looks_the_same(anon_client, sent_emails
     assert unknown.status_code == known.status_code == 202
     assert unknown.json() == known.json()
     assert len(sent_emails) == 1
+
+
+def test_production_without_smtp_disables_password_reset_without_creating_tokens(anon_client, monkeypatch):
+    from types import SimpleNamespace
+
+    monkeypatch.setattr(
+        auth_service,
+        "get_settings",
+        lambda: SimpleNamespace(password_reset_enabled=False),
+    )
+
+    known = request_reset(anon_client)
+    unknown = request_reset(anon_client, "nadie@distrirapido.pe")
+
+    db = SessionLocal()
+    token_count = db.query(PasswordResetToken).count()
+    db.close()
+    assert known.status_code == unknown.status_code == 202
+    assert known.json() == unknown.json()
+    assert token_count == 0
 
 
 def test_reset_changes_password(anon_client, sent_emails):

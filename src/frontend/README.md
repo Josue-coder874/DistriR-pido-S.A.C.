@@ -7,6 +7,10 @@ Este módulo concentra la interfaz web para la gestión y visualización de ruta
 - Permitir la consulta de indicadores y resultados del cálculo.
 - Ofrecer una experiencia de operación clara y usable.
 
+## Despliegue en Vercel
+
+Crea un proyecto Vercel conectado al repositorio y selecciona `src/frontend` como **Root Directory**. Usa `npm run build` como comando de compilación y `dist` como directorio de salida. Configura `VITE_API_URL` como la URL HTTPS pública del backend de Vercel terminada en `/api` (por ejemplo, `https://<backend>.vercel.app/api`) para Production y Preview según corresponda. Esta variable forma parte del bundle público; nunca incluyas credenciales de Supabase ni otros secretos del backend.
+
 ## Tecnologías
 - React
 - Vite

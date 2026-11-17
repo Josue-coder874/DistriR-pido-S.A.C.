@@ -95,6 +95,9 @@ def request_password_reset(db: Session, email: str) -> tuple[str, str, str] | No
     en ambos casos para no revelar qué correos están registrados.
     """
     settings = get_settings()
+    if not settings.password_reset_enabled:
+        return None
+
     user = find_user_by_email(db, email)
     if user is None or user.status != "ACTIVO":
         record_audit(db, "PASSWORD_RESET_REQUEST", "auth", "IGNORADO", email=email.strip().lower())

@@ -19,6 +19,7 @@ class Settings(BaseModel):
     lockout_minutes: int = 15  # RN-001
     frontend_url: str = "http://localhost:5173"
     cors_allowed_origins: list[str]
+    password_reset_enabled: bool = True
     smtp_host: str | None = None
     smtp_port: int = 587
     smtp_user: str | None = None
@@ -52,14 +53,13 @@ def get_settings() -> Settings:
         raise RuntimeError("CORS_ALLOWED_ORIGINS debe incluir al menos un origen permitido.")
 
     smtp_host = os.getenv("SMTP_HOST") or None
-    if secure_environment and not smtp_host:
-        raise RuntimeError("SMTP_HOST debe estar configurado fuera del entorno de desarrollo.")
 
     return Settings(
         environment=environment,
         secret_key=secret_key,
         frontend_url=frontend_url,
         cors_allowed_origins=list(dict.fromkeys(cors_allowed_origins)),
+        password_reset_enabled=not secure_environment or bool(smtp_host),
         smtp_host=smtp_host,
         smtp_port=int(os.getenv("SMTP_PORT", "587")),
         smtp_user=os.getenv("SMTP_USER") or None,

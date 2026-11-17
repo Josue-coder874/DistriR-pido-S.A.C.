@@ -10,6 +10,7 @@ from app.services import email_service
 
 def settings(**overrides):
     values = {
+        "environment": "development",
         "smtp_host": "smtp.example.test",
         "smtp_port": 2525,
         "smtp_user": None,
@@ -30,6 +31,22 @@ def test_send_email_logs_message_when_smtp_is_not_configured(monkeypatch, caplog
     assert "user@example.test" in caplog.text
     assert "Subject" in caplog.text
     assert "Body" in caplog.text
+
+
+def test_send_email_does_not_log_sensitive_content_without_production_smtp(monkeypatch, caplog):
+    monkeypatch.setattr(
+        email_service,
+        "get_settings",
+        lambda: settings(environment="production", smtp_host=None),
+    )
+
+    with caplog.at_level(logging.WARNING, logger="uvicorn.error"):
+        email_service.send_email("user@example.test", "Subject", "reset_token=private-token")
+
+    assert "SMTP no está configurado" in caplog.text
+    assert "user@example.test" not in caplog.text
+    assert "Subject" not in caplog.text
+    assert "private-token" not in caplog.text
 
 
 @pytest.mark.parametrize(

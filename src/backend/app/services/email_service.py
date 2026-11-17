@@ -11,8 +11,10 @@ def send_email(to: str, subject: str, body: str) -> None:
     settings = get_settings()
 
     if not settings.smtp_host:
-        # Modo desarrollo: sin SMTP configurado, el correo se muestra en el log del backend.
-        logger.warning("Correo no enviado (SMTP_HOST vacío).\nPara: %s\nAsunto: %s\n\n%s", to, subject, body)
+        if settings.environment in {"staging", "production"}:
+            logger.warning("Correo no enviado: SMTP no está configurado.")
+        else:
+            logger.warning("Correo no enviado (SMTP_HOST vacío).\nPara: %s\nAsunto: %s\n\n%s", to, subject, body)
         return
 
     message = EmailMessage()

@@ -22,18 +22,18 @@ El backend conserva SQLite como valor predeterminado local. Configura `DATABASE_
 
 El esquema PostgreSQL se gestiona con Alembic y no se crea ni modifica automáticamente al iniciar la API. Desde esta carpeta, ejecuta `python -m alembic upgrade head` antes del primer arranque. La API comprueba que la revisión de la base coincida con la última migración. SQLite local mantiene su inicialización compatible con bases existentes.
 
-## Despliegue de la API en Render
+## Despliegue de la API en Vercel
 
-El Blueprint del repositorio (`render.yaml`) configura un servicio web Python gratuito de demostración desde `main`, con raíz `src/backend`, comprobación de salud en `/` y puerto asignado por Render. Tras conectar el repositorio a Render, crea el servicio desde ese Blueprint. El plan Free puede suspender el servicio por inactividad y no es una opción de disponibilidad garantizada para producción.
+Crea un proyecto Vercel conectado al repositorio y configura `src/backend` como **Root Directory**. Vercel detecta FastAPI en `app/main.py` y las dependencias de `requirements.txt`; Python 3.12 es la versión predeterminada. No se necesita un comando de inicio ni un archivo de configuración específico de plataforma.
 
-Configura en Render las variables que el Blueprint solicita: `DATABASE_URL` (URI de Supabase privada), `FRONTEND_URL` y `CORS_ALLOWED_ORIGINS` (origen HTTPS exacto de Vercel; pueden ser el mismo valor), y las credenciales de un proveedor SMTP real. Render genera `SECRET_KEY`. No copies el `.env` local completo ni pongas secretos en `render.yaml`.
+Configura las variables directamente en **Project Settings → Environment Variables** para Production (y también Preview si corresponde): `DATABASE_URL` (URI privada de Supabase), `SECRET_KEY` (clave aleatoria persistente de al menos 32 bytes), `ENVIRONMENT=production`, `FRONTEND_URL` y `CORS_ALLOWED_ORIGINS` (origen HTTPS exacto del frontend de Vercel), más `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` y `SMTP_FROM` cuando haya un proveedor de correo. No subas `.env` al repositorio ni expongas `DATABASE_URL` en el frontend. Vercel no debe recibir el archivo `.env` como código o artefacto.
 
-La migración `0001_initial_schema` ya debe estar aplicada a Supabase antes de iniciar la API. El servicio verifica la revisión al arrancar; si se agrega una migración nueva, aplícala a la base antes de desplegar código que la requiera. Después del despliegue, comprueba la URL de salud, autenticación, CORS desde el dominio de Vercel, envío de correo y optimización de rutas. La URI de Supabase no debe exponerse al frontend.
+La revisión Alembic `0001_initial_schema` debe estar aplicada a Supabase antes de desplegar. La API verifica la revisión al iniciar. Sin `SMTP_HOST` en staging/producción, la solicitud de recuperación de contraseña responde de forma genérica sin crear tokens; al habilitar SMTP, vuelve a estar disponible. En desarrollo local, los enlaces continúan apareciendo en el log si no hay SMTP. Después del despliegue, prueba `/`, autenticación, CORS desde el dominio del frontend, correo (si está configurado) y optimización de rutas. Mantén en Vercel el límite de tiempo de ejecución adecuado para las peticiones del optimizador.
 
 Para transferir los datos locales a una base PostgreSQL recién migrada:
 
 1. Detén la API y crea una copia de seguridad de `app.db` fuera del repositorio.
-2. Configura `DATABASE_URL` de destino de forma privada. La API desplegada en Render debe usar un URI de PostgreSQL válido para esa red; usa el pooler de Supabase si la conexión directa no es accesible.
+2. Configura `DATABASE_URL` de destino de forma privada. La API desplegada debe usar un URI de PostgreSQL válido para esa red; usa el pooler de Supabase si la conexión directa no es accesible.
 3. Ejecuta primero una simulación, desde esta carpeta: `python -m scripts.migrate_sqlite_to_postgres --source app.db`. La herramienta informa únicamente cantidades por tabla y se niega a continuar si el esquema de origen/destino no es compatible o el destino no está vacío.
 4. Revisa las cantidades y confirma la importación con `python -m scripts.migrate_sqlite_to_postgres --source app.db --apply`; escribe `IMPORT` cuando se solicite. La carga conserva claves primarias y datos relacionados, se ejecuta en una transacción y verifica los recuentos antes de confirmar.
 5. Ejecuta `python -m pytest` y valida la API contra PostgreSQL antes de cambiar el tráfico de producción. Conserva el SQLite original y su respaldo hasta comprobar la migración.
@@ -52,4 +52,4 @@ La salida de optimización es una propuesta calculada en la petición; no se per
 
 ## Configuración segura
 
-En desarrollo, la API permite `FRONTEND_URL` local. Para staging o producción, configura `ENVIRONMENT`, una `SECRET_KEY` generada con al menos 32 bytes, `FRONTEND_URL` y `CORS_ALLOWED_ORIGINS` con orígenes HTTPS explícitos, además de `SMTP_HOST`. No uses `*` en CORS. El TLS debe terminar en el proxy o balanceador; verifica que la aplicación reciba correctamente el esquema HTTPS para habilitar HSTS. La configuración local no sustituye la verificación del despliegue.
+En desarrollo, la API permite `FRONTEND_URL` local. Para staging o producción, configura `ENVIRONMENT`, una `SECRET_KEY` generada con al menos 32 bytes, `FRONTEND_URL` y `CORS_ALLOWED_ORIGINS` con orígenes HTTPS explícitos. Configura SMTP si se necesita recuperación de contraseñas; sin `SMTP_HOST`, esa función queda desactivada de forma segura en esos entornos. No uses `*` en CORS. El TLS debe terminar en el proxy o balanceador; verifica que la aplicación reciba correctamente el esquema HTTPS para habilitar HSTS. La configuración local no sustituye la verificación del despliegue.

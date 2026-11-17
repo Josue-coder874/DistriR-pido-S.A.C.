@@ -3,7 +3,7 @@
 # Análisis Playwright
 
 **Proyecto:** EcoLogística Lima – DistriRápido S.A.C.
-**Versión:** V_1_0_0
+**Versión:** V_1_0_1
 **Fecha del informe:** 2026-11-17
 
 ## Alcance y arquitectura
@@ -38,7 +38,22 @@ Ejecución reproducible exigida: usar el mismo commit y datos reinicializados, e
 
 `casos aprobados al primer intento / casos ejecutados × 100`
 
-Estado al 2026-11-17: la suite está implementada, pero no existe todavía un reporte HTML real adjunto ni una ejecución aprobatoria contra ambos dominios productivos. No se afirma que el 100% haya sido alcanzado.
+Estado al 2026-11-17: la suite está implementada, pero no se ejecutó Playwright ni existe un reporte HTML adjunto. Por tanto, no hay tasa de aprobación E2E verificada y no se afirma que el 100% haya sido alcanzado.
+
+### Verificación de humo de producción (no sustituye la suite E2E)
+
+El 2026-11-17 se comprobó el despliegue de Vercel contra el commit `a19e7ce`:
+
+| Solicitud | Resultado observado | Interpretación |
+|---|---|---|
+| `GET https://distrir-pido-backend.vercel.app/` | HTTP 200; JSON de estado `ok` | Aplicación FastAPI inicia |
+| `GET /docs` | HTTP 200; HTML de Swagger UI | Documentación de API disponible |
+| `GET /openapi.json` | HTTP 200; esquema OpenAPI 3.1 | Esquema de endpoints disponible |
+| `GET /api/customers` sin token | HTTP 401 | Protección de autenticación activa |
+| `POST /api/auth/login` con formato de correo inválido | HTTP 422 | Validación de entrada activa |
+| `POST /api/auth/login` con correo válido aleatorio no registrado | HTTP 401 | La ruta de login procesa la solicitud y devuelve rechazo esperado; no se usó una cuenta real |
+
+Desde una página servida en `https://distrir-pido-frontend.vercel.app`, el navegador pudo leer las respuestas 422 y 401 de la API. Esto confirma CORS para ese origen en esas solicitudes. No valida credenciales válidas ni los flujos funcionales autenticados. Las pruebas fueron sondeos puntuales; no constituyen una serie de latencia ni de disponibilidad.
 
 ## Rendimiento de laboratorio
 
@@ -60,7 +75,7 @@ Para cada endpoint ordinario se realizan al menos 30 solicitudes secuenciales. L
 
 El endpoint `/api/routes/optimize` debe medirse aparte con una carga identificada, por ejemplo 150 pedidos y 15 vehículos. Los tiempos de este escenario no se mezclan con los endpoints ordinarios.
 
-Estado al 2026-11-17: no se han registrado mediciones reproducibles adicionales a la compilación local de Vite. Por tanto, no existen aún métricas reales para afirmar cumplimiento de los objetivos.
+Estado al 2026-11-17: no se han registrado mediciones reproducibles adicionales a la compilación local de Vite y a los sondeos HTTP puntuales anteriores. No existen aún muestras de rendimiento para afirmar cumplimiento de los objetivos.
 
 ## Disponibilidad y resiliencia
 
@@ -80,11 +95,11 @@ El resultado debe registrar hora UTC, código HTTP, latencia, timeout y error. E
 
 Pruebas de resiliencia pendientes de ejecución:
 
-- Respuesta HTTP 401 ante credenciales inválidas.
-- Respuesta HTTP 422 ante datos inválidos.
 - Respuesta HTTP 5xx controlada o simulada.
 - Corte de red desde el navegador.
 - Comportamiento observado al recuperar la conectividad.
+
+La respuesta 401 por falta de autenticación y el 422 de validación documentados arriba son comprobaciones puntuales, no reemplazan la matriz de resiliencia ni la evidencia de fallo de red.
 
 ## Evidencias y pendientes
 
@@ -102,4 +117,5 @@ Los artefactos no deben incluir usuarios, contraseñas, tokens ni URIs privadas.
 
 | Versión | Fecha | Cambio |
 |---|---|---|
-| 1.0.0 | 2026-11-17 | Se incorpora la suite Playwright ejecutable, la configuración multi-navegador y el protocolo completo de medición, disponibilidad y reporte. |
+| 1.0.0 | 2026-11-17 | Se incorpora la suite Playwright, la configuración multi-navegador y el protocolo de medición. |
+| 1.0.1 | 2026-11-17 | Se documentan resultados de humo observados en Vercel, separándolos de las pruebas E2E, métricas y sondeos todavía pendientes. |

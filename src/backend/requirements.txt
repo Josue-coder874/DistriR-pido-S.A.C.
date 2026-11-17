@@ -3,6 +3,8 @@ starlette==1.10.0
 uvicorn==0.33.0
 pydantic==2.10.6
 sqlalchemy==2.0.43
+alembic==1.16.5
+psycopg[binary]==3.2.10
 python-dotenv==1.2.4
 ortools==9.12.4544
 PyJWT==2.15.1

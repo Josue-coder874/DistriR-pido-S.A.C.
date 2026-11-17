@@ -11,9 +11,34 @@ Este módulo concentra la lógica de negocio, APIs y procesos de optimización d
 - Python
 - FastAPI
 - OR-Tools
-- SQLite
+- SQLAlchemy
+- SQLite en desarrollo local; PostgreSQL en producción tras completar la migración a Supabase
 
 Los clientes/pedidos pueden incluir `window_start` y `window_end` en formato `HH:MM`. Las ventanas son opcionales, pero se deben enviar ambas; el optimizador las trata como límites de llegada el mismo día y contempla el tiempo de viaje y 10 minutos de servicio por parada. Si la ruta no puede cumplirlas, `POST /api/routes/optimize` responde `422`. Al arrancar, `init_db()` agrega esas columnas si se usa una base SQLite creada por una versión anterior.
+
+## Migración a PostgreSQL/Supabase
+
+El backend conserva SQLite como valor predeterminado local. Configura `DATABASE_URL` como variable privada para apuntar a PostgreSQL; se aceptan URI `postgres://` y `postgresql://`, que se normalizan al controlador Psycopg 3. No guardes la URI ni la contraseña en el repositorio, el frontend o el chat.
+
+El esquema PostgreSQL se gestiona con Alembic y no se crea ni modifica automáticamente al iniciar la API. Desde esta carpeta, ejecuta `python -m alembic upgrade head` antes del primer arranque. La API comprueba que la revisión de la base coincida con la última migración. SQLite local mantiene su inicialización compatible con bases existentes.
+
+## Despliegue de la API en Render
+
+El Blueprint del repositorio (`render.yaml`) configura un servicio web Python gratuito de demostración desde `main`, con raíz `src/backend`, comprobación de salud en `/` y puerto asignado por Render. Tras conectar el repositorio a Render, crea el servicio desde ese Blueprint. El plan Free puede suspender el servicio por inactividad y no es una opción de disponibilidad garantizada para producción.
+
+Configura en Render las variables que el Blueprint solicita: `DATABASE_URL` (URI de Supabase privada), `FRONTEND_URL` y `CORS_ALLOWED_ORIGINS` (origen HTTPS exacto de Vercel; pueden ser el mismo valor), y las credenciales de un proveedor SMTP real. Render genera `SECRET_KEY`. No copies el `.env` local completo ni pongas secretos en `render.yaml`.
+
+La migración `0001_initial_schema` ya debe estar aplicada a Supabase antes de iniciar la API. El servicio verifica la revisión al arrancar; si se agrega una migración nueva, aplícala a la base antes de desplegar código que la requiera. Después del despliegue, comprueba la URL de salud, autenticación, CORS desde el dominio de Vercel, envío de correo y optimización de rutas. La URI de Supabase no debe exponerse al frontend.
+
+Para transferir los datos locales a una base PostgreSQL recién migrada:
+
+1. Detén la API y crea una copia de seguridad de `app.db` fuera del repositorio.
+2. Configura `DATABASE_URL` de destino de forma privada. La API desplegada en Render debe usar un URI de PostgreSQL válido para esa red; usa el pooler de Supabase si la conexión directa no es accesible.
+3. Ejecuta primero una simulación, desde esta carpeta: `python -m scripts.migrate_sqlite_to_postgres --source app.db`. La herramienta informa únicamente cantidades por tabla y se niega a continuar si el esquema de origen/destino no es compatible o el destino no está vacío.
+4. Revisa las cantidades y confirma la importación con `python -m scripts.migrate_sqlite_to_postgres --source app.db --apply`; escribe `IMPORT` cuando se solicite. La carga conserva claves primarias y datos relacionados, se ejecuta en una transacción y verifica los recuentos antes de confirmar.
+5. Ejecuta `python -m pytest` y valida la API contra PostgreSQL antes de cambiar el tráfico de producción. Conserva el SQLite original y su respaldo hasta comprobar la migración.
+
+La importación no borra ni modifica el archivo SQLite de origen. No ejecutes `--apply` contra una base con datos: el comando está diseñado para un destino vacío y aborta si encuentra filas en las tablas de la aplicación.
 
 ## Listados paginados
 

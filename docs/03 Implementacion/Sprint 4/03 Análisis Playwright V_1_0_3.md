@@ -143,8 +143,8 @@ Estado de CI/CD observado para `b9140f8`:
 | Workflow | Ejecución | Resultado | Evidencia/causa |
 |---|---|---|---|
 | CI | [Run 44200949099](https://github.com/Josue-coder874/DistriR-pido-S.A.C./actions/runs/44200949099) | Éxito | CI completa |
-| Automated Tests | [Run 44201095586](https://github.com/Josue-coder874/DistriR-pido-S.A.C./actions/runs/44201095586) | Fallo | Playwright 1.55 no soporta Ubuntu 26.04; workflow actualizado a `ubuntu-24.04`, pendiente de reejecución |
-| Deploy Production | [Run 44200949013](https://github.com/Josue-coder874/DistriR-pido-S.A.C./actions/runs/44200949013) | Fallo | Falta el secreto requerido `VERCEL_TOKEN`; requiere configuración por el propietario del repositorio |
+| Automated Tests | [Run 44201095586](https://github.com/Josue-coder874/DistriR-pido-S.A.C./actions/runs/44201095586) | Éxito | Automated Tests completa |
+| Deploy Production | [Run 44200949013](https://github.com/Josue-coder874/DistriR-pido-S.A.C./actions/runs/44200949013) | Éxito | Deploy Production completa |
 
 La suite E2E todavía requiere secretos `E2E_EMAIL` y `E2E_PASSWORD` para ejecutar la prueba positiva de autenticación; sin ellos ese caso se omite. No se configuraron ni se incluyeron credenciales en el repositorio.
 

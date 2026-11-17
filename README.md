@@ -18,7 +18,7 @@ Plataforma web de optimización de rutas de distribución para **DistriRápido S
 
 - **Backend:** Python, FastAPI, OR-Tools
 - **Frontend:** React, Vite
-- **Base de datos:** SQLite local para el MVP; persistencia real en el archivo `src/backend/app.db` sin necesidad de servidor externo
+- **Base de datos:** SQLite para desarrollo local; PostgreSQL administrado en Supabase previsto para producción
 - **Control de versiones:** Git
 
 ## Estructura del repositorio
@@ -95,7 +95,7 @@ npm install
 npm run dev
 ```
 
-El archivo `.env` no se sube al repositorio. El backend utiliza SQLite como base de datos definitiva para el alcance del MVP y crea/actualiza el archivo local `src/backend/app.db`. PostgreSQL/PostGIS no forma parte de la implementación acordada para este proyecto.
+El archivo `.env` no se sube al repositorio. Por defecto, el backend usa SQLite y crea/actualiza `src/backend/app.db` para el desarrollo local. Se está preparando la migración del entorno de producción a PostgreSQL en Supabase; hasta completar y verificar la importación de datos y el despliegue, SQLite sigue siendo el único entorno de base de datos operativo. PostgreSQL/PostGIS no se usa para funciones geoespaciales en esta versión.
 
 Toda la API requiere inicio de sesión. Los roles disponibles son `ADMINISTRADOR`, `DESPACHADOR`, `CONDUCTOR` y `AUDITOR`. Sin `SMTP_HOST`, el enlace de recuperación de contraseña se muestra en el log del backend.
 

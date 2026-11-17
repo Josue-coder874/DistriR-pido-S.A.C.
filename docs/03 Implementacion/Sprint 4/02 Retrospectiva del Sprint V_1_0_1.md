@@ -4,6 +4,7 @@
 
 **Nombre del Proyecto:** EcoLogística Lima – DistriRápido S.A.C.
 **Líder del Proyecto:** Josue Gonzales Silupu
+**Versión:** V_1_0_1
 
 ## ¿Qué aprendimos?
 
@@ -43,8 +44,17 @@ Unir despliegue, validación HTTP y revisión de logs antes de cerrar una activi
 | Ejecutar medición de 20 muestras por página y 30 solicitudes por endpoint | Nayely Cuicapuza Remigio | 2026-11-20 | Conjuntos completos, sin eliminación de fallos o atípicos |
 | Capturar cinco respuestas SUS y calcular el promedio | Nayely Cuicapuza Remigio | 2026-11-21 | n >= 5, respuestas completas y promedio redondeado a un decimal |
 
+### Seguimiento al 2026-11-17
+
+- Se completó la verificación de humo de producción de la raíz, documentación y OpenAPI de la API. Las pruebas unitarias/integración locales pasaron: backend 172/172, frontend 89/89; build frontend aprobado.
+- La primera medición de 30 solicitudes por endpoint mostró p95 de 958.3 ms en `/`, 907.0 ms en `/openapi.json` y 750.4 ms en `/api/customers` sin autenticación. No alcanza el objetivo indicativo p95 menor a 500 ms; falta repetir desde un runner externo documentado.
+- La suite Playwright no pudo instalar los navegadores en Ubuntu 26.04 con Playwright 1.55. Se fijó el runner a Ubuntu 24.04; la nueva ejecución y los secretos de usuario E2E siguen pendientes.
+- El workflow de despliegue de GitHub Actions no dispone de `VERCEL_TOKEN`; la publicación de producción comprobada se realizó desde Vercel.
+- No se recogieron respuestas SUS. Los 60 sondeos de disponibilidad y la demo autenticada también siguen pendientes.
+
 ## Historial de versiones
 
 | Versión | Fecha | Cambio |
 |---|---|---|
 | 1.0.0 | 2026-11-17 | Retrospectiva del Sprint 4 con acciones responsables y métricas verificables. |
+| 1.0.1 | 2026-11-17 | Se agregan resultados verificados de pruebas, API y CI/CD, manteniendo explícitamente las acciones pendientes. |

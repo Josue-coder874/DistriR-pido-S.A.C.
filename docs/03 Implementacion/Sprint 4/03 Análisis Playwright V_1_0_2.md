@@ -3,7 +3,7 @@
 # Análisis Playwright
 
 **Proyecto:** EcoLogística Lima – DistriRápido S.A.C.
-**Versión:** V_1_0_1
+**Versión:** V_1_0_2
 **Fecha del informe:** 2026-11-17
 
 ## Alcance y arquitectura
@@ -38,7 +38,9 @@ Ejecución reproducible exigida: usar el mismo commit y datos reinicializados, e
 
 `casos aprobados al primer intento / casos ejecutados × 100`
 
-Estado al 2026-11-17: la suite está implementada, pero no se ejecutó Playwright ni existe un reporte HTML adjunto. Por tanto, no hay tasa de aprobación E2E verificada y no se afirma que el 100% haya sido alcanzado.
+Estado al 2026-11-17: la ejecución GitHub Actions 44201095586 falló durante la instalación de los navegadores. Playwright 1.55 no soporta el runner `ubuntu-latest` resuelto como Ubuntu 26.04. Se cambió el runner del workflow a `ubuntu-24.04`; falta que la nueva ejecución termine para confirmar la suite. No hay reporte HTML aprobado ni tasa E2E verificada.
+
+Las pruebas unitarias/integración del backend local pasaron 172/172 con Python 3.12; las pruebas unitarias frontend pasaron 89/89 y `npm run build` finalizó correctamente. Vitest se configuró para descubrir solamente `src/**/*.test.{js,jsx}`, evitando importar las pruebas Playwright como pruebas unitarias.
 
 ### Verificación de humo de producción (no sustituye la suite E2E)
 
@@ -54,6 +56,18 @@ El 2026-11-17 se comprobó el despliegue de Vercel contra el commit `a19e7ce`:
 | `POST /api/auth/login` con correo válido aleatorio no registrado | HTTP 401 | La ruta de login procesa la solicitud y devuelve rechazo esperado; no se usó una cuenta real |
 
 Desde una página servida en `https://distrir-pido-frontend.vercel.app`, el navegador pudo leer las respuestas 422 y 401 de la API. Esto confirma CORS para ese origen en esas solicitudes. No valida credenciales válidas ni los flujos funcionales autenticados. Las pruebas fueron sondeos puntuales; no constituyen una serie de latencia ni de disponibilidad.
+
+### Medición secuencial de API
+
+El 2026-11-17 se realizaron 30 solicitudes secuenciales por endpoint, desde un equipo local Windows con Python 3.12 y `urllib`. Se midió tiempo total de cada petición y lectura del cuerpo; no se registró la región del cliente ni se usó un runner externo. Los percentiles se calcularon sobre las 30 muestras sin descartar resultados.
+
+| Endpoint | Respuestas | p50 | p95 | Interpretación |
+|---|---:|---:|---:|---|
+| `GET /` | 30 × HTTP 200 | 557.5 ms | 958.3 ms | Servicio responde; excede objetivo indicativo p95 < 500 ms |
+| `GET /openapi.json` | 30 × HTTP 200 | 593.9 ms | 907.0 ms | Esquema disponible; excede objetivo indicativo p95 < 500 ms |
+| `GET /api/customers` sin token | 30 × HTTP 401 | 554.9 ms | 750.4 ms | Protección activa; mide solo el rechazo no autenticado, no el tiempo de consulta autenticada |
+
+Estos resultados son mediciones preliminares desde una única conexión de cliente/red no caracterizada; no sustituyen el protocolo reproducible desde runner externo y no certifican el rendimiento de todos los endpoints. No se midió `/api/routes/optimize` porque no había sesión autenticada ni carga de prueba.
 
 ## Rendimiento de laboratorio
 
@@ -75,7 +89,7 @@ Para cada endpoint ordinario se realizan al menos 30 solicitudes secuenciales. L
 
 El endpoint `/api/routes/optimize` debe medirse aparte con una carga identificada, por ejemplo 150 pedidos y 15 vehículos. Los tiempos de este escenario no se mezclan con los endpoints ordinarios.
 
-Estado al 2026-11-17: no se han registrado mediciones reproducibles adicionales a la compilación local de Vite y a los sondeos HTTP puntuales anteriores. No existen aún muestras de rendimiento para afirmar cumplimiento de los objetivos.
+Estado al 2026-11-17: existen las muestras API preliminares descritas arriba, pero siguen pendientes las 20 muestras por página de FCP/LCP y una serie repetible desde runner externo. Los percentiles observados de API no cumplen el objetivo de laboratorio p95 < 500 ms y deben confirmarse en el entorno de medición especificado.
 
 ## Disponibilidad y resiliencia
 
@@ -101,6 +115,8 @@ Pruebas de resiliencia pendientes de ejecución:
 
 La respuesta 401 por falta de autenticación y el 422 de validación documentados arriba son comprobaciones puntuales, no reemplazan la matriz de resiliencia ni la evidencia de fallo de red.
 
+No se completaron los 60 sondeos espaciados un minuto: esa ventana observacional de una hora queda pendiente.
+
 ## Evidencias y pendientes
 
 Artefactos previstos:
@@ -111,6 +127,16 @@ Artefactos previstos:
 - Registro CSV o JSON de latencias de página y API.
 - Capturas de respuestas HTTP negativas y fallo de red.
 
+Estado de CI/CD observado para `b9140f8`:
+
+| Workflow | Ejecución | Resultado | Evidencia/causa |
+|---|---|---|---|
+| CI | [Run 44200949099](https://github.com/Josue-coder874/DistriR-pido-S.A.C./actions/runs/44200949099) | Éxito | CI completa |
+| Automated Tests | [Run 44201095586](https://github.com/Josue-coder874/DistriR-pido-S.A.C./actions/runs/44201095586) | Fallo | Playwright 1.55 no soporta Ubuntu 26.04; workflow actualizado a `ubuntu-24.04`, pendiente de reejecución |
+| Deploy Production | [Run 44200949013](https://github.com/Josue-coder874/DistriR-pido-S.A.C./actions/runs/44200949013) | Fallo | Falta el secreto requerido `VERCEL_TOKEN`; requiere configuración por el propietario del repositorio |
+
+La suite E2E todavía requiere secretos `E2E_EMAIL` y `E2E_PASSWORD` para ejecutar la prueba positiva de autenticación; sin ellos ese caso se omite. No se configuraron ni se incluyeron credenciales en el repositorio.
+
 Los artefactos no deben incluir usuarios, contraseñas, tokens ni URIs privadas. Las pruebas de laboratorio no equivalen a datos de campo ni por sí solas certifican Core Web Vitals.
 
 ## Historial de versiones
@@ -119,3 +145,4 @@ Los artefactos no deben incluir usuarios, contraseñas, tokens ni URIs privadas.
 |---|---|---|
 | 1.0.0 | 2026-11-17 | Se incorpora la suite Playwright, la configuración multi-navegador y el protocolo de medición. |
 | 1.0.1 | 2026-11-17 | Se documentan resultados de humo observados en Vercel, separándolos de las pruebas E2E, métricas y sondeos todavía pendientes. |
+| 1.0.2 | 2026-11-17 | Se registran resultados de CI, pruebas unitarias y medición preliminar de API; se documentan bloqueos de Playwright/despliegue y se actualiza el runner a Ubuntu 24.04. |
